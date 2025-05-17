@@ -85,7 +85,7 @@ class WebsiteURLCreate(BaseModel):
     description: Optional[str] = None
 
 class WebsiteURLUpdate(BaseModel):
-    url: Optional[HttpUrl] = None
+    url: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
 
