@@ -422,6 +422,9 @@ async def refresh_website_content(website_id: str, current_user: dict = Depends(
 # Chat functionality - No authentication required for regular users
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat(chat_request: ChatRequest):
+    # Add a small delay to avoid hitting Claude's rate limits
+    await asyncio.sleep(1)
+    
     client = get_claude_client()
     if not client:
         raise HTTPException(
