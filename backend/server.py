@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Body, Request, status, Response, Cookie
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Body, Request, status, Response, Cookie, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -24,6 +24,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 import time
 import secrets
+import shutil
+from pypdf import PdfReader
+import io
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
@@ -48,6 +51,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "ryan@laracle.com")
 ADMIN_PASSWORD = "admin123"  # Simplified for demo
 
+# PDF Storage
+PDF_DIR = ROOT_DIR / "pdf_storage"
+PDF_DIR.mkdir(exist_ok=True)
+
 # Create the main app without a prefix
 app = FastAPI()
 
@@ -71,6 +78,13 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+class PdfDocument(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    filename: str
+    path: str
+    content_text: str
+    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+
 class WebsiteURL(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     url: str
@@ -79,6 +93,7 @@ class WebsiteURL(BaseModel):
     added_at: datetime = Field(default_factory=datetime.utcnow)
     last_scraped: Optional[datetime] = None
     content_cache: Optional[str] = None
+    pdfs: List[PdfDocument] = []
 
 class WebsiteURLCreate(BaseModel):
     url: HttpUrl
@@ -186,6 +201,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+# PDF Processing Functions
+def extract_text_from_pdf(pdf_file):
+    """Extract text content from a PDF file"""
+    try:
+        reader = PdfReader(pdf_file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+        return text
+    except Exception as e:
+        logging.error(f"Error extracting text from PDF: {str(e)}")
+        return ""
 
 # Authentication and Authorization
 async def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -427,6 +455,15 @@ async def update_website(website_id: str, website_update: WebsiteURLUpdate, curr
 
 @api_router.delete("/websites/{website_id}")
 async def delete_website(website_id: str, current_user: dict = Depends(get_admin_user)):
+    # First get the website to check if it has PDFs to delete
+    website = await db.websites.find_one({"id": website_id})
+    if website and "pdfs" in website:
+        # Delete associated PDF files
+        for pdf in website["pdfs"]:
+            pdf_path = Path(pdf["path"])
+            if pdf_path.exists():
+                pdf_path.unlink()
+    
     result = await db.websites.delete_one({"id": website_id})
     if result.deleted_count:
         return {"status": "success", "message": "Website deleted"}
@@ -445,6 +482,118 @@ async def refresh_website_content(website_id: str, current_user: dict = Depends(
     
     await db.websites.update_one({"id": website_id}, {"$set": website_data.dict()})
     return {"status": "success", "message": "Website content refreshed"}
+
+# PDF Upload and Management
+@api_router.post("/websites/{website_id}/pdfs")
+async def upload_pdf(
+    website_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_admin_user)
+):
+    # Verify the website exists
+    website = await db.websites.find_one({"id": website_id})
+    if not website:
+        raise HTTPException(status_code=404, detail="Website not found")
+    
+    # Verify it's actually a PDF
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    # Create a unique filename
+    safe_filename = f"{uuid.uuid4()}_{file.filename}"
+    file_path = PDF_DIR / safe_filename
+    
+    try:
+        # Read the file content
+        contents = await file.read()
+        
+        # Save the file
+        with open(file_path, "wb") as f:
+            f.write(contents)
+        
+        # Extract text from the PDF
+        pdf_text = extract_text_from_pdf(io.BytesIO(contents))
+        
+        # Create PDF document record
+        pdf_doc = PdfDocument(
+            filename=file.filename,
+            path=str(file_path),
+            content_text=pdf_text
+        )
+        
+        # Update the website with the new PDF
+        website_data = WebsiteURL(**website)
+        if not hasattr(website_data, 'pdfs'):
+            website_data.pdfs = []
+        
+        website_data.pdfs.append(pdf_doc)
+        
+        # Update in the database
+        await db.websites.update_one(
+            {"id": website_id},
+            {"$set": {"pdfs": [pdf.dict() for pdf in website_data.pdfs]}}
+        )
+        
+        return {"status": "success", "message": "PDF uploaded successfully", "pdf": pdf_doc.dict()}
+    
+    except Exception as e:
+        # If there's an error, clean up any partially created file
+        if file_path.exists():
+            file_path.unlink()
+        
+        logging.error(f"Error uploading PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error uploading PDF: {str(e)}")
+
+@api_router.get("/websites/{website_id}/pdfs")
+async def get_website_pdfs(website_id: str, current_user: dict = Depends(get_admin_user)):
+    website = await db.websites.find_one({"id": website_id})
+    if not website:
+        raise HTTPException(status_code=404, detail="Website not found")
+    
+    if "pdfs" not in website or not website["pdfs"]:
+        return []
+    
+    return website["pdfs"]
+
+@api_router.delete("/websites/{website_id}/pdfs/{pdf_id}")
+async def delete_pdf(website_id: str, pdf_id: str, current_user: dict = Depends(get_admin_user)):
+    # Get the website
+    website = await db.websites.find_one({"id": website_id})
+    if not website:
+        raise HTTPException(status_code=404, detail="Website not found")
+    
+    # Find the PDF
+    if "pdfs" not in website:
+        raise HTTPException(status_code=404, detail="PDF not found")
+    
+    pdfs = website["pdfs"]
+    pdf_to_delete = None
+    remaining_pdfs = []
+    
+    for pdf in pdfs:
+        if pdf["id"] == pdf_id:
+            pdf_to_delete = pdf
+        else:
+            remaining_pdfs.append(pdf)
+    
+    if not pdf_to_delete:
+        raise HTTPException(status_code=404, detail="PDF not found")
+    
+    # Delete the file
+    try:
+        pdf_path = Path(pdf_to_delete["path"])
+        if pdf_path.exists():
+            pdf_path.unlink()
+    except Exception as e:
+        logging.error(f"Error deleting PDF file: {str(e)}")
+    
+    # Update the website record
+    await db.websites.update_one(
+        {"id": website_id},
+        {"$set": {"pdfs": remaining_pdfs}}
+    )
+    
+    return {"status": "success", "message": "PDF deleted successfully"}
 
 # Chat functionality - No authentication required for regular users
 @api_router.post("/chat", response_model=ChatResponse)
@@ -494,6 +643,7 @@ async def chat(chat_request: ChatRequest):
         
         # Only use the top 2 most relevant websites to limit context size
         for website in sorted_websites[:2]:
+            # Get website content
             if website.get("content_cache"):
                 # Limit each website content to about 1000 words
                 content = website.get("content_cache", "")
@@ -503,9 +653,21 @@ async def chat(chat_request: ChatRequest):
                 
                 context += f"\n\nContent from {website.get('title', 'Unknown')} ({website.get('url', 'No URL')}):\n"
                 context += content
-                
-                # Store the product ID for service partner lookup
-                relevant_product_ids.append(website.get("id"))
+            
+            # Get PDF content from this website
+            if "pdfs" in website and website["pdfs"]:
+                for pdf in website["pdfs"][:2]:  # Limit to 2 PDFs per website
+                    pdf_content = pdf.get("content_text", "")
+                    if pdf_content:
+                        words = pdf_content.split()
+                        if len(words) > 1000:
+                            pdf_content = " ".join(words[:1000]) + "..."
+                        
+                        context += f"\n\nContent from PDF document '{pdf.get('filename', 'Unknown')}' for {website.get('title', 'Unknown')}:\n"
+                        context += pdf_content
+            
+            # Store the product ID for service partner lookup
+            relevant_product_ids.append(website.get("id"))
     
     # Check if service partners should be included
     service_keywords = ['service', 'repair', 'fix', 'help', 'support', 'maintenance', 'install', 'assistance']
