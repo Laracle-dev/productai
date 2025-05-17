@@ -43,6 +43,10 @@ security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
 
+# Create collections for timeslots and bookings
+timeslots_collection = db.timeslots
+bookings_collection = db.bookings
+
 # JWT Configuration
 SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
