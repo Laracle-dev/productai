@@ -469,6 +469,7 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
       // Add more complex color variation
       float cl = cos(ang + iTime * 2.0) * 0.5 + 0.5;
       float cl2 = sin(ang * 3.0 + iTime * 1.5) * 0.5 + 0.5;
+      float cl3 = sin(ang * 2.0 - iTime) * 0.5 + 0.5;
       
       // Inner glow with time variation
       float a = iTime * -1.0;
