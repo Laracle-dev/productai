@@ -111,6 +111,20 @@ const useAuth = () => {
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  
+  // Add debug logging
+  console.log('ProtectedRoute:', { user, loading });
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('No user detected, redirecting to login');
+      navigate('/login', { replace: true });
+    } else if (!loading && user && !user.isAdmin) {
+      console.log('User is not admin, redirecting to unauthorized');
+      navigate('/unauthorized', { replace: true });
+    }
+  }, [user, loading, navigate]);
   
   if (loading) {
     return (
@@ -121,11 +135,11 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return null; // Will be redirected by useEffect
   }
   
   if (!user.isAdmin) {
-    return <Navigate to="/unauthorized" replace />;
+    return null; // Will be redirected by useEffect
   }
   
   return children;
