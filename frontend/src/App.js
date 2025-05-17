@@ -724,11 +724,10 @@ const PDFUploader = ({ productId, getAuthHeader, onUploadComplete }) => {
 };
 
 // Service Partner List Component
-const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
+const ServicePartnerList = ({ productId, onEdit, onDelete, onManageTimeSlots, getAuthHeader }) => {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedPartnerId, setExpandedPartnerId] = useState(null);
-  const [showTimeSlots, setShowTimeSlots] = useState(false);
 
   useEffect(() => {
     fetchPartners();
@@ -753,10 +752,8 @@ const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
   const togglePartnerExpansion = (partnerId) => {
     if (expandedPartnerId === partnerId) {
       setExpandedPartnerId(null);
-      setShowTimeSlots(false);
     } else {
       setExpandedPartnerId(partnerId);
-      setShowTimeSlots(false);
     }
   };
 
@@ -834,24 +831,13 @@ const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
               <div className="flex space-x-3">
                 {partner.has_custom_slots && (
                   <button 
-                    onClick={() => setShowTimeSlots(true)}
-                    className={`px-3 py-1 rounded text-sm ${showTimeSlots ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                    onClick={() => onManageTimeSlots(partner)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
                   >
                     Manage Time Slots
                   </button>
                 )}
               </div>
-              
-              {showTimeSlots && partner.has_custom_slots && (
-                <div className="mt-3">
-                  <TimeSlotManager 
-                    partnerId={partner.id} 
-                    partnerName={partner.name}
-                    getAuthHeader={getAuthHeader}
-                    onUpdate={() => fetchPartners()}
-                  />
-                </div>
-              )}
             </div>
           )}
         </div>
