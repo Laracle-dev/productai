@@ -360,12 +360,12 @@ const Unauthorized = () => {
       <p className="text-gray-300 mb-6">
         You don't have permission to access this page. Please contact an administrator.
       </p>
-      <a 
-        href="/"
+      <Link 
+        to="/"
         className="inline-block bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         Go to Home
-      </a>
+      </Link>
     </div>
   );
 };
