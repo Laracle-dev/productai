@@ -346,9 +346,9 @@ const Chat = () => {
   
   // Example questions
   const exampleQuestions = [
-    { icon: "💪", question: "Core exercises I can do without equipment?" },
-    { icon: "📺", question: "Must-watch YouTube channels for personal development?" },
-    { icon: "📚", question: "Self improvement book recommendations that are fun to read" }
+    { icon: "🔧", question: "Where can I get my product repaired?" },
+    { icon: "🔎", question: "What are the key features of your product?" },
+    { icon: "📦", question: "Do you provide installation services?" }
   ];
   
   // Scroll to bottom of chat when conversation updates
@@ -500,7 +500,7 @@ const Chat = () => {
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Self improvement book recommendations that are fun to read"
+            placeholder="Ask about products, services, or repairs..."
             className="search-input w-full pr-12"
             disabled={loading}
           />
@@ -516,6 +516,385 @@ const Chat = () => {
           </button>
         </form>
       </div>
+    </div>
+  );
+};
+
+// Service Partner List Component
+const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
+  const [partners, setPartners] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPartners();
+  }, [productId]);
+
+  const fetchPartners = async () => {
+    try {
+      const url = productId 
+        ? `${API}/websites/${productId}/service-partners` 
+        : `${API}/service-partners`;
+      
+      const response = await axios.get(url, getAuthHeader());
+      setPartners(response.data);
+    } catch (error) {
+      console.error('Error fetching service partners:', error);
+      toast.error('Failed to load service partners');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading service partners...</div>;
+  }
+
+  if (partners.length === 0) {
+    return (
+      <div className="text-gray-400 text-center py-4">
+        No service partners found for this product.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 mt-4">
+      {partners.map(partner => (
+        <div key={partner.id} className="border border-gray-700 rounded-md p-3">
+          <div className="flex justify-between">
+            <div>
+              <h4 className="font-bold">{partner.name}</h4>
+              <p className="text-sm text-gray-400">Service: {partner.service}</p>
+              <p className="text-sm text-gray-400">Location: {partner.location}</p>
+              <p className="text-sm text-gray-400">
+                Contact: {partner.email} | {partner.phone}
+              </p>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => onEdit(partner)}
+                className="text-blue-400 hover:text-blue-300"
+                title="Edit partner"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => onDelete(partner.id)}
+                className="text-red-400 hover:text-red-300"
+                title="Delete partner"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Service Partner Form Component
+const ServicePartnerForm = ({ partner, productId, onSave, onCancel, getAuthHeader }) => {
+  const [name, setName] = useState(partner ? partner.name : '');
+  const [service, setService] = useState(partner ? partner.service : '');
+  const [location, setLocation] = useState(partner ? partner.location : '');
+  const [email, setEmail] = useState(partner ? partner.email : '');
+  const [phone, setPhone] = useState(partner ? partner.phone : '');
+  const [selectedProductId, setSelectedProductId] = useState(partner ? partner.product_id : productId || '');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  // Fetch available products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(`${API}/websites`, getAuthHeader());
+        setProducts(response.data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Failed to load products');
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!name || !service || !location || !email || !phone || !selectedProductId) {
+      toast.error('All fields are required');
+      return;
+    }
+
+    setLoading(true);
+
+    const partnerData = {
+      name,
+      service,
+      location,
+      email,
+      phone,
+      product_id: selectedProductId
+    };
+
+    try {
+      if (partner) {
+        // Update existing partner
+        await axios.put(
+          `${API}/service-partners/${partner.id}`,
+          partnerData,
+          getAuthHeader()
+        );
+        toast.success('Service partner updated successfully');
+      } else {
+        // Create new partner
+        await axios.post(
+          `${API}/service-partners`,
+          partnerData,
+          getAuthHeader()
+        );
+        toast.success('Service partner added successfully');
+      }
+      onSave();
+    } catch (error) {
+      console.error('Error saving service partner:', error);
+      toast.error(error.response?.data?.detail || 'Failed to save service partner');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="admin-input w-full"
+          placeholder="Partner Name"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Service</label>
+        <input
+          type="text"
+          value={service}
+          onChange={(e) => setService(e.target.value)}
+          className="admin-input w-full"
+          placeholder="Repair, Installation, Support, etc."
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Location</label>
+        <input
+          type="text"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="admin-input w-full"
+          placeholder="City, State, Country"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="admin-input w-full"
+          placeholder="contact@example.com"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+        <input
+          type="text"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="admin-input w-full"
+          placeholder="+1 (555) 123-4567"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Product</label>
+        {loadingProducts ? (
+          <div className="text-gray-400">Loading products...</div>
+        ) : (
+          <select
+            value={selectedProductId}
+            onChange={(e) => setSelectedProductId(e.target.value)}
+            className="admin-input w-full"
+            required
+          >
+            <option value="">Select a product</option>
+            {products.map(product => (
+              <option key={product.id} value={product.id}>
+                {product.title}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      
+      <div className="flex space-x-3">
+        <button
+          type="submit"
+          disabled={loading}
+          className="admin-button bg-blue-600 hover:bg-blue-700"
+        >
+          {loading ? 'Saving...' : (partner ? 'Update Partner' : 'Add Partner')}
+        </button>
+        
+        <button
+          type="button"
+          onClick={onCancel}
+          className="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// Service Partner Management Component
+const ServicePartnerManager = () => {
+  const [showForm, setShowForm] = useState(false);
+  const [editingPartner, setEditingPartner] = useState(null);
+  const [filterProductId, setFilterProductId] = useState('');
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const { user } = useAuth();
+  
+  const getAuthHeader = () => ({
+    headers: { Authorization: `Bearer ${user.token}` }
+  });
+  
+  // Fetch available products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(`${API}/websites`, getAuthHeader());
+        setProducts(response.data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Failed to load products');
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+  
+  const handleAddPartner = () => {
+    setEditingPartner(null);
+    setShowForm(true);
+  };
+  
+  const handleEditPartner = (partner) => {
+    setEditingPartner(partner);
+    setShowForm(true);
+  };
+  
+  const handleDeletePartner = async (partnerId) => {
+    if (window.confirm('Are you sure you want to delete this service partner?')) {
+      try {
+        await axios.delete(`${API}/service-partners/${partnerId}`, getAuthHeader());
+        toast.success('Service partner deleted successfully');
+        // Refresh the list
+        setShowForm(false);
+        setEditingPartner(null);
+      } catch (error) {
+        console.error('Error deleting service partner:', error);
+        toast.error('Failed to delete service partner');
+      }
+    }
+  };
+  
+  const handleSavePartner = () => {
+    setShowForm(false);
+    setEditingPartner(null);
+  };
+  
+  return (
+    <div className="admin-container mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Service Partners</h2>
+        
+        {!showForm && (
+          <button
+            onClick={handleAddPartner}
+            className="admin-button bg-green-600 hover:bg-green-700"
+          >
+            Add Service Partner
+          </button>
+        )}
+      </div>
+      
+      {showForm ? (
+        <ServicePartnerForm
+          partner={editingPartner}
+          productId={filterProductId}
+          onSave={handleSavePartner}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingPartner(null);
+          }}
+          getAuthHeader={getAuthHeader}
+        />
+      ) : (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Filter by Product
+            </label>
+            
+            {loadingProducts ? (
+              <div className="text-gray-400">Loading products...</div>
+            ) : (
+              <select
+                value={filterProductId}
+                onChange={(e) => setFilterProductId(e.target.value)}
+                className="admin-input w-full"
+              >
+                <option value="">All Products</option>
+                {products.map(product => (
+                  <option key={product.id} value={product.id}>
+                    {product.title}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          
+          <ServicePartnerList
+            productId={filterProductId}
+            onEdit={handleEditPartner}
+            onDelete={handleDeletePartner}
+            getAuthHeader={getAuthHeader}
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -684,6 +1063,17 @@ const WebsiteManager = () => {
         </button>
       </div>
       
+      {/* Admin Navigation */}
+      <div className="bg-gray-800 rounded-lg p-4 mb-6">
+        <nav className="flex space-x-4">
+          <div className="text-white px-3 py-2 rounded-md bg-gray-700">Products</div>
+          <div className="text-white px-3 py-2 rounded-md hover:bg-gray-700" 
+               onClick={() => navigate('/admin/service-partners')}>
+            Service Partners
+          </div>
+        </nav>
+      </div>
+      
       {/* API Key Configuration */}
       <div className="admin-container mb-6">
         <h2 className="text-xl font-bold mb-4">Claude API Configuration</h2>
@@ -711,7 +1101,7 @@ const WebsiteManager = () => {
 
       {/* Add Website Form */}
       <div className="admin-container mb-6">
-        <h2 className="text-xl font-bold mb-4">Add Website</h2>
+        <h2 className="text-xl font-bold mb-4">Add Product</h2>
         <form onSubmit={handleAddWebsite} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -754,17 +1144,17 @@ const WebsiteManager = () => {
             disabled={loading}
             className="admin-button"
           >
-            {loading ? 'Adding...' : 'Add Website'}
+            {loading ? 'Adding...' : 'Add Product'}
           </button>
         </form>
       </div>
       
       {/* Website List */}
       <div className="admin-container">
-        <h2 className="text-xl font-bold mb-4">Managed Websites</h2>
+        <h2 className="text-xl font-bold mb-4">Managed Products</h2>
         
         {websites.length === 0 ? (
-          <p className="text-gray-400">No websites added yet.</p>
+          <p className="text-gray-400">No products added yet.</p>
         ) : (
           <div className="space-y-4">
             {websites.map((site) => (
@@ -901,6 +1291,40 @@ function App() {
                 <Navigation />
                 <main className="flex-1 container mx-auto p-4">
                   <WebsiteManager />
+                </main>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/service-partners" element={
+              <ProtectedRoute>
+                <Navigation />
+                <main className="flex-1 container mx-auto p-4">
+                  <div className="container mx-auto p-4 max-w-4xl">
+                    <div className="flex justify-between items-center mb-6">
+                      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+                      <a
+                        href="/admin"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                      >
+                        Back to Products
+                      </a>
+                    </div>
+                    
+                    {/* Admin Navigation */}
+                    <div className="bg-gray-800 rounded-lg p-4 mb-6">
+                      <nav className="flex space-x-4">
+                        <div className="text-white px-3 py-2 rounded-md hover:bg-gray-700"
+                             onClick={() => window.location.href = '/admin'}>
+                          Products
+                        </div>
+                        <div className="text-white px-3 py-2 rounded-md bg-gray-700">
+                          Service Partners
+                        </div>
+                      </nav>
+                    </div>
+                    
+                    <ServicePartnerManager />
+                  </div>
                 </main>
               </ProtectedRoute>
             } />
