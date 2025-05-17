@@ -644,7 +644,7 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
 // Energy Sphere Component (old version, replaced with WebGL Orb)
 const EnergySphere = ({ isAnimating = true }) => {
   return (
-    <Orb isAnimating={isAnimating} hue={240} width="70px" height="70px" />
+    <Orb isAnimating={isAnimating} hue={240} width="120px" height="120px" />
   );
 };
 
