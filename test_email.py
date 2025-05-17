@@ -55,9 +55,19 @@ Ryan's Brain AI Team
         logging.info("Authenticating with SMTP server...")
         server.login(smtp_user, smtp_pass)
         
+        # Add special headers for Mailtrap
+        headers = {
+            'X-Mailer': 'Ryan\'s Brain AI Test Mailer',
+            'X-Send-From': from_email  # Header used by Mailtrap
+        }
+        
+        for key, value in headers.items():
+            message.add_header(key, value)
+        
         # Send email
-        logging.info("Sending test email...")
-        server.sendmail(from_email, test_email, message.as_string())
+        logging.info(f"Sending test email using {smtp_user} as sender...")
+        server.sendmail(smtp_user, test_email, message.as_string())
+        server.quit()
         server.quit()
         
         logging.info(f"Test email sent successfully to {test_email}")
