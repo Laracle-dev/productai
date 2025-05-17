@@ -492,8 +492,14 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
       float v2 = smoothstep(1.0, mix(innerRadius, 1.0, n0 * 0.5), len);
       float v3 = smoothstep(innerRadius, mix(innerRadius, 1.0, 0.5), len);
       
+      // Create a more dynamic color blend using all three colors
       vec3 col = mix(color1, color2, cl);
-      col = mix(col, color3, cl2 * 0.3); // Add third color with subtle influence
+      col = mix(col, color3, cl2 * 0.4); // Increase pink influence
+      
+      // Add swirling color patterns
+      float swirl = fbm(vec3(uv * 1.5, iTime * 0.2), 2) * 0.5 + 0.5;
+      col = mix(col, color3, swirl * 0.3 * cl3);
+      
       col = mix(color3, col, v0);
       col = (col + v1 + v1b * 0.6) * v2 * v3 * surfaceDetail;
       
