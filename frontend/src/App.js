@@ -1078,6 +1078,7 @@ const WebsiteManager = () => {
   const [apiKey, setApiKey] = useState('');
   const [activeTab, setActiveTab] = useState('info');  // 'info', 'pdfs'
   const [activeProductId, setActiveProductId] = useState(null);
+  const [pendingPdfFiles, setPendingPdfFiles] = useState([]);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
