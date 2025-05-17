@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-route
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from 'react-hot-toast';
+import ReactMarkdown from 'react-markdown';
 import "./App.css";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
