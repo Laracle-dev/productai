@@ -1543,6 +1543,12 @@ const WebsiteManager = () => {
         )}
       </div>
 
+      {/* Stripe Configuration */}
+      <div className="admin-container mb-6">
+        <h2 className="text-xl font-bold mb-4">Stripe Payment Configuration</h2>
+        <StripeConfigForm getAuthHeader={getAuthHeader} />
+      </div>
+
       {/* Add Website Form */}
       <div className="admin-container mb-6">
         <h2 className="text-xl font-bold mb-4">Add Product</h2>
