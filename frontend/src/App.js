@@ -2223,12 +2223,12 @@ function App() {
                   <div className="container mx-auto p-4 max-w-4xl">
                     <div className="flex justify-between items-center mb-6">
                       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-                      <a
-                        href="/admin"
+                      <Link
+                        to="/admin"
                         className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                       >
                         Back to Products
-                      </a>
+                      </Link>
                     </div>
                     
                     {/* Admin Navigation */}
