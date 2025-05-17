@@ -1119,21 +1119,56 @@ const WebsiteManager = () => {
     setLoading(true);
     
     try {
-      await axios.post(`${API}/websites`, {
+      // First, create the website/product
+      const response = await axios.post(`${API}/websites`, {
         url,
         title,
         description: description || undefined
       }, getAuthHeader());
       
+      const newWebsiteId = response.data.id;
+      
+      // If there are PDFs to upload, process them
+      if (pendingPdfFiles.length > 0) {
+        toast.success('Product created successfully. Uploading PDFs...');
+        
+        // Upload each PDF file
+        for (const file of pendingPdfFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          try {
+            await axios.post(
+              `${API}/websites/${newWebsiteId}/pdfs`,
+              formData,
+              {
+                ...getAuthHeader(),
+                headers: {
+                  ...getAuthHeader().headers,
+                  'Content-Type': 'multipart/form-data'
+                }
+              }
+            );
+          } catch (pdfError) {
+            console.error(`Error uploading PDF ${file.name}:`, pdfError);
+            toast.error(`Failed to upload PDF: ${file.name}`);
+          }
+        }
+        
+        toast.success(`Uploaded ${pendingPdfFiles.length} PDF${pendingPdfFiles.length !== 1 ? 's' : ''}`);
+      } else {
+        toast.success('Product added successfully');
+      }
+      
       // Reset form
       setUrl('');
       setTitle('');
       setDescription('');
+      setPendingPdfFiles([]);
       
       // Refresh list
       await fetchWebsites();
       
-      toast.success('Website added successfully');
     } catch (error) {
       console.error('Error adding website:', error);
       if (error.response?.status === 401) {
