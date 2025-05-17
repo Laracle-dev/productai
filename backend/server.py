@@ -399,6 +399,49 @@ async def set_api_key(config: ApiKeyConfig, current_user: dict = Depends(get_adm
         logging.error(f"Error setting API key: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error setting API key: {str(e)}")
 
+@api_router.delete("/config/api-key")
+async def remove_api_key(current_user: dict = Depends(get_admin_user)):
+    # Remove API key from .env file
+    try:
+        env_path = ROOT_DIR / '.env'
+        
+        # Read existing content
+        with open(env_path, 'r') as file:
+            content = file.read()
+        
+        # Check if CLAUDE_API_KEY exists
+        if "CLAUDE_API_KEY" in content:
+            # Remove the API key line
+            lines = content.split('\n')
+            updated_lines = []
+            for line in lines:
+                if not line.startswith("CLAUDE_API_KEY="):
+                    updated_lines.append(line)
+            
+            updated_content = '\n'.join(updated_lines)
+            
+            # Write back to file
+            with open(env_path, 'w') as file:
+                file.write(updated_content)
+            
+            # Remove from environment variables
+            if "CLAUDE_API_KEY" in os.environ:
+                del os.environ["CLAUDE_API_KEY"]
+            
+            return {"status": "success", "message": "API key removed successfully"}
+        else:
+            return {"status": "success", "message": "No API key found to remove"}
+    
+    except Exception as e:
+        logging.error(f"Error removing API key: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error removing API key: {str(e)}")
+
+@api_router.get("/config/api-key/status")
+async def check_api_key_status(current_user: dict = Depends(get_admin_user)):
+    # Check if Claude API key is set
+    api_key = os.environ.get("CLAUDE_API_KEY")
+    return {"has_api_key": api_key is not None and api_key.strip() != ""}
+
 # Website URL management - Now requires admin authentication
 @api_router.post("/websites", response_model=WebsiteURL)
 async def create_website(website: WebsiteURLCreate, current_user: dict = Depends(get_admin_user)):
