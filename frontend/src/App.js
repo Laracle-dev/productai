@@ -710,6 +710,8 @@ const PDFUploader = ({ productId, getAuthHeader, onUploadComplete }) => {
 const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedPartnerId, setExpandedPartnerId] = useState(null);
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
 
   useEffect(() => {
     fetchPartners();
@@ -731,6 +733,16 @@ const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
     }
   };
 
+  const togglePartnerExpansion = (partnerId) => {
+    if (expandedPartnerId === partnerId) {
+      setExpandedPartnerId(null);
+      setShowTimeSlots(false);
+    } else {
+      setExpandedPartnerId(partnerId);
+      setShowTimeSlots(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-4">Loading service partners...</div>;
   }
@@ -749,12 +761,34 @@ const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
         <div key={partner.id} className="border border-gray-700 rounded-md p-3">
           <div className="flex justify-between">
             <div>
-              <h4 className="font-bold">{partner.name}</h4>
+              <div className="flex items-center space-x-2">
+                <h4 className="font-bold">{partner.name}</h4>
+                <button 
+                  onClick={() => togglePartnerExpansion(partner.id)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={expandedPartnerId === partner.id ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+                  </svg>
+                </button>
+              </div>
               <p className="text-sm text-gray-400">Service: {partner.service}</p>
               <p className="text-sm text-gray-400">Location: {partner.location}</p>
               <p className="text-sm text-gray-400">
                 Contact: {partner.email} | {partner.phone}
               </p>
+              {partner.calendly_url && (
+                <p className="text-sm text-blue-400 mt-1">
+                  <a href={partner.calendly_url} target="_blank" rel="noopener noreferrer">
+                    Calendly Booking Link
+                  </a>
+                </p>
+              )}
+              {partner.has_custom_slots && (
+                <div className="mt-1">
+                  <span className="text-sm text-green-400">Custom booking enabled</span>
+                </div>
+              )}
             </div>
             <div className="flex space-x-2">
               <button
@@ -777,6 +811,32 @@ const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
               </button>
             </div>
           </div>
+          
+          {expandedPartnerId === partner.id && (
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <div className="flex space-x-3">
+                {partner.has_custom_slots && (
+                  <button 
+                    onClick={() => setShowTimeSlots(true)}
+                    className={`px-3 py-1 rounded text-sm ${showTimeSlots ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                  >
+                    Manage Time Slots
+                  </button>
+                )}
+              </div>
+              
+              {showTimeSlots && partner.has_custom_slots && (
+                <div className="mt-3">
+                  <TimeSlotManager 
+                    partnerId={partner.id} 
+                    partnerName={partner.name}
+                    getAuthHeader={getAuthHeader}
+                    onUpdate={() => fetchPartners()}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
