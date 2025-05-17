@@ -7,6 +7,7 @@ import os
 import logging
 import uuid
 import requests
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from typing import List, Dict, Optional, Any
