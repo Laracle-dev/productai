@@ -149,10 +149,16 @@ const ChatMessage = ({ message, isUser }) => {
         className={`inline-block max-w-[80%] rounded-lg px-4 py-2 ${
           isUser
             ? 'bg-blue-600 text-white'
-            : 'bg-gray-800 text-white'
+            : 'bg-gray-800 text-white message-content'
         }`}
       >
-        {message}
+        {isUser ? (
+          message
+        ) : (
+          <ReactMarkdown className="markdown-content">
+            {message}
+          </ReactMarkdown>
+        )}
       </div>
     </div>
   );
