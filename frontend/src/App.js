@@ -1814,10 +1814,12 @@ const WebsiteManager = () => {
       <div className="bg-gray-800 rounded-lg p-4 mb-6">
         <nav className="flex space-x-4">
           <div className="text-white px-3 py-2 rounded-md bg-gray-700">Products</div>
-          <div className="text-white px-3 py-2 rounded-md hover:bg-gray-700" 
-               onClick={() => navigate('/admin/service-partners')}>
+          <Link 
+            to="/admin/service-partners"
+            className="text-white px-3 py-2 rounded-md hover:bg-gray-700"
+          >
             Service Partners
-          </div>
+          </Link>
         </nav>
       </div>
       
