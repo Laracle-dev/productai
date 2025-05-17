@@ -477,6 +477,7 @@ async def chat(chat_request: ChatRequest):
     # Get all website content to provide context
     websites = await db.websites.find().to_list(1000)
     context = ""
+    relevant_product_ids = []
     
     if websites:
         # First pass - find the website most relevant to the question
@@ -502,6 +503,30 @@ async def chat(chat_request: ChatRequest):
                 
                 context += f"\n\nContent from {website.get('title', 'Unknown')} ({website.get('url', 'No URL')}):\n"
                 context += content
+                
+                # Store the product ID for service partner lookup
+                relevant_product_ids.append(website.get("id"))
+    
+    # Check if service partners should be included
+    service_keywords = ['service', 'repair', 'fix', 'help', 'support', 'maintenance', 'install', 'assistance']
+    should_include_partners = any(keyword in chat_request.message.lower() for keyword in service_keywords)
+    
+    service_partner_info = ""
+    if should_include_partners and relevant_product_ids:
+        # Get service partners for the relevant products
+        all_partners = []
+        for product_id in relevant_product_ids:
+            partners = await db.service_partners.find({"product_id": product_id}).to_list(100)
+            if partners:
+                all_partners.extend(partners)
+        
+        if all_partners:
+            service_partner_info = "\n\nService Partners Information:\n"
+            for partner in all_partners[:3]:  # Limit to 3 partners to save tokens
+                service_partner_info += f"\nName: {partner.get('name')}\n"
+                service_partner_info += f"Service: {partner.get('service')}\n"
+                service_partner_info += f"Location: {partner.get('location')}\n"
+                service_partner_info += f"Contact: {partner.get('email')} / {partner.get('phone')}\n"
     
     # Prepare messages for Claude
     system_prompt = """You are a helpful AI assistant for a product information chatbot. 
