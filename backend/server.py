@@ -560,8 +560,12 @@ async def chat(chat_request: ChatRequest):
         # Create the Claude API request
         # Combine system prompt with context
         enhanced_system_prompt = system_prompt
+        
         if context:
             enhanced_system_prompt += f"\n\nHere is information about our products that you can use to answer questions:\n{context}"
+        
+        if service_partner_info:
+            enhanced_system_prompt += f"\n\n{service_partner_info}\n\nIf the user is asking about repairs, support, or services, mention these service partners and offer to connect the user with them. Ask if they would like to contact one of these partners."
         
         response = client.messages.create(
             model="claude-3-opus-20240229",
