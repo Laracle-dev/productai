@@ -1076,6 +1076,8 @@ const WebsiteManager = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState({});
   const [apiKey, setApiKey] = useState('');
+  const [apiKeyStatus, setApiKeyStatus] = useState(false);
+  const [checkingApiKey, setCheckingApiKey] = useState(true);
   const [activeTab, setActiveTab] = useState('info');  // 'info', 'pdfs'
   const [activeProductId, setActiveProductId] = useState(null);
   const [pendingPdfFiles, setPendingPdfFiles] = useState([]);
@@ -1090,6 +1092,7 @@ const WebsiteManager = () => {
   // Fetch websites on component mount
   useEffect(() => {
     fetchWebsites();
+    checkApiKeyStatus();
   }, []);
   
   const fetchWebsites = async () => {
@@ -1105,6 +1108,18 @@ const WebsiteManager = () => {
       } else {
         toast.error('Failed to load websites');
       }
+    }
+  };
+
+  const checkApiKeyStatus = async () => {
+    setCheckingApiKey(true);
+    try {
+      const response = await axios.get(`${API}/config/api-key/status`, getAuthHeader());
+      setApiKeyStatus(response.data.has_api_key);
+    } catch (error) {
+      console.error('Error checking API key status:', error);
+    } finally {
+      setCheckingApiKey(false);
     }
   };
   
@@ -1240,6 +1255,7 @@ const WebsiteManager = () => {
       
       setApiKey('');
       toast.success('API key updated successfully');
+      checkApiKeyStatus();
     } catch (error) {
       console.error('Error setting API key:', error);
       if (error.response?.status === 401) {
@@ -1248,6 +1264,27 @@ const WebsiteManager = () => {
         navigate('/login');
       } else {
         toast.error('Failed to update API key');
+      }
+    }
+  };
+
+  const handleRemoveApiKey = async () => {
+    if (!window.confirm('Are you sure you want to remove the Claude API key? This will disable the chatbot functionality.')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/config/api-key`, getAuthHeader());
+      toast.success('API key removed successfully');
+      checkApiKeyStatus();
+    } catch (error) {
+      console.error('Error removing API key:', error);
+      if (error.response?.status === 401) {
+        toast.error('Your session has expired. Please log in again.');
+        logout();
+        navigate('/login');
+      } else {
+        toast.error('Failed to remove API key');
       }
     }
   };
@@ -1382,26 +1419,50 @@ const WebsiteManager = () => {
       {/* API Key Configuration */}
       <div className="admin-container mb-6">
         <h2 className="text-xl font-bold mb-4">Claude API Configuration</h2>
-        <form onSubmit={handleSetApiKey} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Claude API Key
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your Claude API key"
-              className="admin-input w-full"
-            />
-          </div>
-          <button
-            type="submit"
-            className="admin-button bg-purple-600 hover:bg-purple-700"
-          >
-            Save API Key
-          </button>
-        </form>
+        {checkingApiKey ? (
+          <div className="text-gray-400 py-2">Checking API key status...</div>
+        ) : (
+          <>
+            {apiKeyStatus ? (
+              <div className="mb-4">
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className="bg-green-500 h-3 w-3 rounded-full"></div>
+                  <span className="text-green-400 font-medium">Claude API Key Connected</span>
+                </div>
+                <p className="text-gray-300 mb-4">
+                  Your Claude API key is currently active. The chatbot is using this key to process queries.
+                </p>
+                <button
+                  onClick={handleRemoveApiKey}
+                  className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md"
+                >
+                  Remove API Key
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSetApiKey} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Claude API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your Claude API key"
+                    className="admin-input w-full"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="admin-button bg-purple-600 hover:bg-purple-700"
+                >
+                  Save API Key
+                </button>
+              </form>
+            )}
+          </>
+        )}
       </div>
 
       {/* Add Website Form */}
