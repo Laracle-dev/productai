@@ -524,6 +524,170 @@ const Chat = () => {
   );
 };
 
+// PDF List Component
+const PDFList = ({ productId, getAuthHeader, onRefresh }) => {
+  const [pdfs, setPDFs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPDFs();
+  }, [productId]);
+
+  const fetchPDFs = async () => {
+    try {
+      const response = await axios.get(`${API}/websites/${productId}/pdfs`, getAuthHeader());
+      setPDFs(response.data || []);
+    } catch (error) {
+      console.error('Error fetching PDFs:', error);
+      toast.error('Failed to load PDFs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (pdfId) => {
+    if (!window.confirm('Are you sure you want to delete this PDF?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/websites/${productId}/pdfs/${pdfId}`, getAuthHeader());
+      toast.success('PDF deleted successfully');
+      fetchPDFs();
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error('Error deleting PDF:', error);
+      toast.error('Failed to delete PDF');
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading PDFs...</div>;
+  }
+
+  if (!pdfs || pdfs.length === 0) {
+    return <div className="text-gray-400 py-2">No PDFs uploaded yet</div>;
+  }
+
+  return (
+    <div className="space-y-2 mt-2">
+      <h4 className="font-medium text-gray-300">Uploaded PDFs</h4>
+      <div className="space-y-2">
+        {pdfs.map(pdf => (
+          <div key={pdf.id} className="flex justify-between items-center bg-gray-700 rounded p-2">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span className="text-sm truncate" title={pdf.filename}>{pdf.filename}</span>
+            </div>
+            <button
+              onClick={() => handleDelete(pdf.id)}
+              className="text-red-400 hover:text-red-300 p-1"
+              title="Delete PDF"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// PDF Upload Component
+const PDFUploader = ({ productId, getAuthHeader, onUploadComplete }) => {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.type === 'application/pdf') {
+      setFile(selectedFile);
+    } else {
+      toast.error('Please select a valid PDF file');
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
+      toast.error('Please select a PDF file first');
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      await axios.post(
+        `${API}/websites/${productId}/pdfs`,
+        formData,
+        {
+          ...getAuthHeader(),
+          headers: {
+            ...getAuthHeader().headers,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      toast.success('PDF uploaded successfully');
+      setFile(null);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      toast.error(error.response?.data?.detail || 'Failed to upload PDF');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 p-3 border border-gray-700 rounded-md">
+      <h4 className="font-medium text-white mb-2">Upload PDF Document</h4>
+      <div className="flex flex-col space-y-3">
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          className="text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+          ref={fileInputRef}
+          disabled={uploading}
+        />
+        {file && (
+          <div className="text-sm text-gray-300">
+            Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+          </div>
+        )}
+        <button
+          onClick={handleUpload}
+          disabled={!file || uploading}
+          className={`px-4 py-2 rounded-md text-white ${!file || uploading ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+        >
+          {uploading ? 'Uploading...' : 'Upload PDF'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Service Partner List Component
 const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
   const [partners, setPartners] = useState([]);
@@ -912,6 +1076,8 @@ const WebsiteManager = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState({});
   const [apiKey, setApiKey] = useState('');
+  const [activeTab, setActiveTab] = useState('info');  // 'info', 'pdfs'
+  const [activeProductId, setActiveProductId] = useState(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
@@ -1055,6 +1221,102 @@ const WebsiteManager = () => {
     navigate('/login');
   };
 
+  const handleProductSelect = (id, tab = 'info') => {
+    setActiveProductId(id);
+    setActiveTab(tab);
+  };
+
+  const renderActiveProductContent = () => {
+    if (!activeProductId) return null;
+    
+    const product = websites.find(w => w.id === activeProductId);
+    if (!product) return null;
+    
+    return (
+      <div className="bg-gray-800 rounded-lg p-4 mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">{product.title}</h3>
+          <button 
+            onClick={() => setActiveProductId(null)}
+            className="text-gray-400 hover:text-white"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="border-b border-gray-700 mb-4">
+          <nav className="flex space-x-4">
+            <button
+              className={`py-2 px-3 ${activeTab === 'info' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+              onClick={() => setActiveTab('info')}
+            >
+              Information
+            </button>
+            <button
+              className={`py-2 px-3 ${activeTab === 'pdfs' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+              onClick={() => setActiveTab('pdfs')}
+            >
+              PDF Documents
+            </button>
+          </nav>
+        </div>
+        
+        {activeTab === 'info' && (
+          <div>
+            <div className="mb-4">
+              <span className="text-gray-400">URL:</span> 
+              <a href={product.url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline">{product.url}</a>
+            </div>
+            
+            {product.description && (
+              <div className="mb-4">
+                <span className="text-gray-400">Description:</span>
+                <p className="mt-1 text-white">{product.description}</p>
+              </div>
+            )}
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => handleRefreshWebsite(product.id)}
+                disabled={refreshing[product.id]}
+                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {refreshing[product.id] ? 'Refreshing...' : 'Refresh Content'}
+              </button>
+              
+              <button
+                onClick={() => handleDeleteWebsite(product.id)}
+                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'pdfs' && (
+          <div>
+            <PDFUploader 
+              productId={activeProductId} 
+              getAuthHeader={getAuthHeader}
+              onUploadComplete={() => fetchWebsites()}
+            />
+            
+            <div className="mt-4">
+              <PDFList 
+                productId={activeProductId} 
+                getAuthHeader={getAuthHeader}
+                onRefresh={() => fetchWebsites()}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
@@ -1077,6 +1339,9 @@ const WebsiteManager = () => {
           </div>
         </nav>
       </div>
+      
+      {/* Active Product Detail View */}
+      {renderActiveProductContent()}
       
       {/* API Key Configuration */}
       <div className="admin-container mb-6">
@@ -1177,6 +1442,20 @@ const WebsiteManager = () => {
                     {site.description && (
                       <p className="text-gray-400 mt-1">{site.description}</p>
                     )}
+                    <div className="mt-2 flex space-x-3">
+                      <button
+                        onClick={() => handleProductSelect(site.id, 'info')}
+                        className="text-xs text-blue-400 hover:underline"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => handleProductSelect(site.id, 'pdfs')}
+                        className="text-xs text-blue-400 hover:underline"
+                      >
+                        Manage PDFs {site.pdfs?.length > 0 && `(${site.pdfs.length})`}
+                      </button>
+                    </div>
                     <p className="text-gray-500 text-xs mt-2">
                       Last scraped: {site.last_scraped ? new Date(site.last_scraped).toLocaleString() : 'Never'}
                     </p>
