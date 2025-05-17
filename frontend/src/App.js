@@ -804,6 +804,11 @@ const ServicePartnerForm = ({ partner, productId, onSave, onCancel, getAuthHeade
       return;
     }
 
+    if (bookingType === 'calendly' && !calendlyUrl) {
+      toast.error('Calendly URL is required when using Calendly for bookings');
+      return;
+    }
+
     setLoading(true);
 
     const partnerData = {
@@ -812,7 +817,9 @@ const ServicePartnerForm = ({ partner, productId, onSave, onCancel, getAuthHeade
       location,
       email,
       phone,
-      product_id: selectedProductId
+      product_id: selectedProductId,
+      has_custom_slots: bookingType === 'custom',
+      calendly_url: bookingType === 'calendly' ? calendlyUrl : null
     };
 
     try {
