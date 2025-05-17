@@ -144,8 +144,28 @@ class ServicePartner(BaseModel):
     email: EmailStr
     phone: str
     product_id: str  # ID of the associated product/website
+    calendly_url: Optional[str] = None
+    has_custom_slots: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TimeSlot(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    partner_id: str
+    date: str
+    start_time: str
+    end_time: str
+    price: float
+    currency: str = "USD"
+    available: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TimeSlotCreate(BaseModel):
+    date: str
+    start_time: str
+    end_time: str
+    price: float
+    currency: str = "USD"
 
 class ServicePartnerCreate(BaseModel):
     name: str
@@ -154,6 +174,8 @@ class ServicePartnerCreate(BaseModel):
     email: EmailStr
     phone: str
     product_id: str
+    calendly_url: Optional[str] = None
+    has_custom_slots: bool = False
 
 class ServicePartnerUpdate(BaseModel):
     name: Optional[str] = None
@@ -162,6 +184,12 @@ class ServicePartnerUpdate(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     product_id: Optional[str] = None
+    calendly_url: Optional[str] = None
+    has_custom_slots: Optional[bool] = None
+
+class StripeConfig(BaseModel):
+    publishable_key: str
+    secret_key: str
 
 class UserBase(BaseModel):
     email: EmailStr
