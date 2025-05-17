@@ -989,6 +989,193 @@ async def get_service_partners_by_product(website_id: str):
     partners = await db.service_partners.find({"product_id": website_id}).to_list(1000)
     return [ServicePartner(**partner) for partner in partners]
 
+# Time slot management endpoints
+@api_router.post("/service-partners/{partner_id}/timeslots", response_model=TimeSlot)
+async def create_timeslot(partner_id: str, timeslot: TimeSlotCreate, current_user: dict = Depends(get_admin_user)):
+    try:
+        # First check if the partner exists
+        partner = await db.service_partners.find_one({"id": partner_id})
+        if not partner:
+            raise HTTPException(status_code=404, detail="Service partner not found")
+        
+        # Create the time slot
+        timeslot_dict = timeslot.dict()
+        timeslot_dict["partner_id"] = partner_id
+        timeslot_dict["id"] = str(uuid.uuid4())
+        timeslot_dict["available"] = True
+        timeslot_dict["created_at"] = datetime.utcnow()
+        
+        await timeslots_collection.insert_one(timeslot_dict)
+        
+        # Update partner to use custom slots if not already set
+        if not partner.get("has_custom_slots"):
+            await db.service_partners.update_one(
+                {"id": partner_id},
+                {"$set": {"has_custom_slots": True}}
+            )
+        
+        return TimeSlot(**timeslot_dict)
+    except Exception as e:
+        logging.error(f"Error creating time slot: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating time slot: {str(e)}")
+
+@api_router.get("/service-partners/{partner_id}/timeslots", response_model=List[TimeSlot])
+async def get_partner_timeslots(partner_id: str):
+    timeslots = await timeslots_collection.find({"partner_id": partner_id}).to_list(length=100)
+    return [TimeSlot(**slot) for slot in timeslots]
+
+@api_router.delete("/service-partners/{partner_id}/timeslots/{timeslot_id}")
+async def delete_timeslot(partner_id: str, timeslot_id: str, current_user: dict = Depends(get_admin_user)):
+    try:
+        result = await timeslots_collection.delete_one({"id": timeslot_id, "partner_id": partner_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Time slot not found")
+        
+        # Check if there are any timeslots left for this partner
+        remaining_slots = await timeslots_collection.count_documents({"partner_id": partner_id})
+        if remaining_slots == 0:
+            # No more slots, update has_custom_slots to False
+            await db.service_partners.update_one(
+                {"id": partner_id},
+                {"$set": {"has_custom_slots": False}}
+            )
+        
+        return {"status": "success", "message": "Time slot deleted successfully"}
+    except Exception as e:
+        logging.error(f"Error deleting time slot: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting time slot: {str(e)}")
+
+# Stripe payment endpoints
+@api_router.post("/create-payment-intent")
+async def create_payment_intent(data: dict = Body(...)):
+    try:
+        # Check if Stripe is configured
+        stripe_secret_key = os.environ.get("STRIPE_SECRET_KEY")
+        if not stripe_secret_key:
+            raise HTTPException(status_code=500, detail="Stripe is not configured")
+        
+        stripe.api_key = stripe_secret_key
+        
+        # Verify the time slot
+        timeslot_id = data.get("timeslot_id")
+        if not timeslot_id:
+            raise HTTPException(status_code=400, detail="Time slot ID is required")
+        
+        timeslot = await timeslots_collection.find_one({"id": timeslot_id, "available": True})
+        if not timeslot:
+            raise HTTPException(status_code=404, detail="Time slot not found or unavailable")
+        
+        # Get partner details
+        partner = await db.service_partners.find_one({"id": timeslot["partner_id"]})
+        if not partner:
+            raise HTTPException(status_code=404, detail="Service partner not found")
+        
+        # Calculate amount in cents (Stripe uses cents)
+        amount = int(timeslot["price"] * 100)
+        currency = timeslot.get("currency", "USD").lower()
+        
+        # Create a PaymentIntent with the order amount and currency
+        payment_intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency=currency,
+            automatic_payment_methods={"enabled": True},
+            metadata={
+                "timeslot_id": timeslot_id,
+                "partner_id": partner["id"],
+                "service": partner["service"],
+                "date": timeslot["date"],
+                "time": f"{timeslot['start_time']} - {timeslot['end_time']}"
+            }
+        )
+        
+        return {
+            "clientSecret": payment_intent.client_secret,
+            "amount": amount,
+            "currency": currency.upper(),
+            "partner": {
+                "name": partner["name"],
+                "service": partner["service"]
+            },
+            "timeslot": {
+                "date": timeslot["date"],
+                "time": f"{timeslot['start_time']} - {timeslot['end_time']}"
+            }
+        }
+    except stripe.error.StripeError as e:
+        logging.error(f"Stripe error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+    except Exception as e:
+        logging.error(f"Error creating payment intent: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating payment intent: {str(e)}")
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    try:
+        stripe_secret_key = os.environ.get("STRIPE_SECRET_KEY")
+        if not stripe_secret_key:
+            raise HTTPException(status_code=500, detail="Stripe is not configured")
+        
+        stripe.api_key = stripe_secret_key
+        
+        # Get the webhook secret from environment
+        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+        
+        # Get the webhook data
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature")
+        
+        # Verify webhook signature if secret is set
+        event = None
+        if webhook_secret:
+            try:
+                event = stripe.Webhook.construct_event(
+                    payload, sig_header, webhook_secret
+                )
+            except ValueError as e:
+                # Invalid payload
+                raise HTTPException(status_code=400, detail=str(e))
+            except stripe.error.SignatureVerificationError as e:
+                # Invalid signature
+                raise HTTPException(status_code=400, detail=str(e))
+        else:
+            # No webhook secret, parse the payload directly
+            try:
+                event = json.loads(payload)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON payload")
+        
+        # Handle the event
+        if event["type"] == "payment_intent.succeeded":
+            payment_intent = event["data"]["object"]
+            
+            # Mark the time slot as booked
+            timeslot_id = payment_intent["metadata"].get("timeslot_id")
+            if timeslot_id:
+                await timeslots_collection.update_one(
+                    {"id": timeslot_id},
+                    {"$set": {"available": False}}
+                )
+                
+                # Create a booking record
+                booking = {
+                    "id": str(uuid.uuid4()),
+                    "timeslot_id": timeslot_id,
+                    "partner_id": payment_intent["metadata"].get("partner_id"),
+                    "payment_intent_id": payment_intent["id"],
+                    "amount": payment_intent["amount"],
+                    "currency": payment_intent["currency"],
+                    "customer_email": payment_intent.get("receipt_email"),
+                    "status": "confirmed",
+                    "created_at": datetime.utcnow()
+                }
+                
+                await bookings_collection.insert_one(booking)
+        
+        return {"status": "success"}
+    except Exception as e:
+        logging.error(f"Error processing webhook: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing webhook: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
