@@ -27,6 +27,7 @@ import secrets
 import shutil
 from pypdf import PdfReader
 import io
+import stripe
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
