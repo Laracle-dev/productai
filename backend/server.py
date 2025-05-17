@@ -394,14 +394,13 @@ async def login(login_request: LoginRequest):
         logging.warning(f"Invalid credentials for email: {login_request.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Generate and store 2FA code
-    code = "123456"  # Fixed code for demo
+    # Generate a random 2FA code
+    code = generate_2fa_code()
     
-    # Simulate storing the code
+    # Store 2FA code in database
     current_time = datetime.utcnow()
     expiration = current_time + timedelta(minutes=10)
     
-    # Store 2FA code in database
     await db.two_factor_codes.delete_many({"email": login_request.email})
     await db.two_factor_codes.insert_one({
         "email": login_request.email,
@@ -409,18 +408,26 @@ async def login(login_request: LoginRequest):
         "expires_at": expiration
     })
     
-    # Simulate sending 2FA code via email
-    email_body = f"Your verification code is: {code}\nThis code will expire in 10 minutes."
+    # Send 2FA code via email using Mailtrap
+    email_body = f"""
+    Your verification code for Ryan's Brain AI is: {code}
+    
+    This code will expire in 10 minutes.
+    
+    If you didn't request this code, please ignore this email.
+    """
+    
     send_email(
         login_request.email,
-        "Your 2FA Code for Product AI Chatbot",
+        "Your 2FA Code for Ryan's Brain AI",
         email_body
     )
     
     # Log the code for testing purposes (REMOVE IN PRODUCTION)
     logging.info(f"2FA code for {login_request.email}: {code}")
     
-    return {"message": "2FA code sent to your email (check server logs for code)"}
+    # For demo, also indicate that 123456 works as a fallback code
+    return {"message": "2FA code sent to your email. For demo purposes, you can also use '123456' as your verification code."}
 
 @api_router.post("/verify-2fa")
 async def verify_2fa(two_factor_request: TwoFactorRequest):
