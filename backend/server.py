@@ -121,6 +121,33 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+class ServicePartner(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    service: str
+    location: str
+    email: EmailStr
+    phone: str
+    product_id: str  # ID of the associated product/website
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ServicePartnerCreate(BaseModel):
+    name: str
+    service: str
+    location: str
+    email: EmailStr
+    phone: str
+    product_id: str
+
+class ServicePartnerUpdate(BaseModel):
+    name: Optional[str] = None
+    service: Optional[str] = None
+    location: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    product_id: Optional[str] = None
+
 class UserBase(BaseModel):
     email: EmailStr
 
