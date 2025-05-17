@@ -424,7 +424,7 @@ const Chat = () => {
         <div className="flex-1 flex flex-col items-center justify-center py-8">
           <ParticleBubble isAnimating={true} />
           <p className="mt-6 text-gray-400 text-center max-w-sm">
-            We believe your personal life is private.
+            Powered by Ryan's Brain - making AI personal
             <br />
             Read more about our <span className="underline">data philosophy</span> ❤️
           </p>
