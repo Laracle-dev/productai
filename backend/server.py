@@ -192,6 +192,21 @@ class StripeConfig(BaseModel):
     publishable_key: str
     secret_key: str
 
+class Booking(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timeslot_id: str
+    partner_id: str
+    payment_intent_id: str
+    amount: float
+    currency: str = "USD"
+    customer_email: Optional[str] = None
+    status: str = "pending"  # pending, confirmed, cancelled
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class StripeConfig(BaseModel):
+    publishable_key: str
+    secret_key: str
+
 class UserBase(BaseModel):
     email: EmailStr
 
