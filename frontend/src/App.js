@@ -417,6 +417,7 @@ const Chat = () => {
     <div className="flex flex-col h-full max-w-2xl mx-auto">
       <div className="text-center pt-8 pb-2">
         <h1 className="text-3xl font-bold mb-1">ASK PRODUCT AI</h1>
+        <p className="text-sm text-gray-400">Powered by Ryan's Brain</p>
       </div>
       
       {showParticle && conversation.length === 0 && (
