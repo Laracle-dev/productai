@@ -249,7 +249,7 @@ def send_email(to_email: str, subject: str, body: str):
     
     # Create the email message
     message = MIMEMultipart()
-    message["From"] = "no-reply@ryansbrainai.com"
+    message["From"] = os.environ.get("MAILTRAP_FROM_EMAIL", "no-reply@ryansbrainai.com")
     message["To"] = to_email
     message["Subject"] = subject
     
