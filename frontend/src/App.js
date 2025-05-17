@@ -2147,12 +2147,12 @@ const Navigation = () => {
   return (
     <nav className="bg-black text-white p-4 border-b border-gray-800">
       <div className="container mx-auto flex justify-between items-center">
-        <a href="/" className="text-xl font-bold">Ryan's Brain AI</a>
+        <Link to="/" className="text-xl font-bold">Ryan's Brain AI</Link>
         <div className="space-x-4">
-          <a href="/" className="hover:text-blue-300">Chat</a>
+          <Link to="/" className="hover:text-blue-300">Chat</Link>
           {user ? (
             <>
-              <a href="/admin" className="hover:text-blue-300">Admin</a>
+              <Link to="/admin" className="hover:text-blue-300">Admin</Link>
               <button 
                 onClick={handleLogout}
                 className="hover:text-blue-300"
@@ -2161,7 +2161,7 @@ const Navigation = () => {
               </button>
             </>
           ) : (
-            <a href="/login" className="hover:text-blue-300">Login</a>
+            <Link to="/login" className="hover:text-blue-300">Login</Link>
           )}
         </div>
       </div>
