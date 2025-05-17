@@ -267,18 +267,24 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        logging.info(f"Decoding token: {token[:10]}...")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        logging.info(f"Token payload: {payload}")
         email: str = payload.get("sub")
         if email is None:
+            logging.error("No subject in token")
             raise credentials_exception
         token_data = TokenData(email=email)
-    except JWTError:
+    except JWTError as e:
+        logging.error(f"JWT error: {str(e)}")
         raise credentials_exception
     
     # For demo purposes, we'll accept any token with the admin email
     if token_data.email == ADMIN_EMAIL:
+        logging.info(f"Admin user authenticated: {token_data.email}")
         return {"email": ADMIN_EMAIL, "is_admin": True, "is_active": True}
     
+    logging.error(f"User not found: {token_data.email}")
     raise credentials_exception
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
