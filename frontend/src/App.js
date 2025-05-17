@@ -1348,6 +1348,8 @@ const ServicePartnerManager = () => {
   const [filterProductId, setFilterProductId] = useState('');
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
   const { user } = useAuth();
   
   const getAuthHeader = () => ({
