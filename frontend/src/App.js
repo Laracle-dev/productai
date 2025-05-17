@@ -1442,20 +1442,6 @@ const WebsiteManager = () => {
                     {site.description && (
                       <p className="text-gray-400 mt-1">{site.description}</p>
                     )}
-                    <div className="mt-2 flex space-x-3">
-                      <button
-                        onClick={() => handleProductSelect(site.id, 'info')}
-                        className="text-xs text-blue-400 hover:underline"
-                      >
-                        View Details
-                      </button>
-                      <button
-                        onClick={() => handleProductSelect(site.id, 'pdfs')}
-                        className="text-xs text-blue-400 hover:underline"
-                      >
-                        Manage PDFs {site.pdfs?.length > 0 && `(${site.pdfs.length})`}
-                      </button>
-                    </div>
                     <p className="text-gray-500 text-xs mt-2">
                       Last scraped: {site.last_scraped ? new Date(site.last_scraped).toLocaleString() : 'Never'}
                     </p>
@@ -1481,6 +1467,93 @@ const WebsiteManager = () => {
                       </svg>
                     </button>
                   </div>
+                </div>
+                
+                {/* Direct PDF Upload Section */}
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <h4 className="font-medium text-white mb-3">PDF Documents</h4>
+                  
+                  {/* PDF Upload Form */}
+                  <div className="bg-gray-800 p-3 rounded-md mb-3">
+                    <h5 className="text-sm font-medium text-blue-400 mb-2">Upload New PDF</h5>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file && file.type === 'application/pdf') {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          
+                          toast.loading('Uploading PDF...');
+                          axios.post(
+                            `${API}/websites/${site.id}/pdfs`,
+                            formData,
+                            {
+                              ...getAuthHeader(),
+                              headers: {
+                                ...getAuthHeader().headers,
+                                'Content-Type': 'multipart/form-data'
+                              }
+                            }
+                          ).then(() => {
+                            toast.dismiss();
+                            toast.success('PDF uploaded successfully');
+                            fetchWebsites();
+                            e.target.value = null; // Reset file input
+                          }).catch(error => {
+                            toast.dismiss();
+                            toast.error('Failed to upload PDF');
+                            console.error('Error uploading PDF:', error);
+                          });
+                        } else if (file) {
+                          toast.error('Please select a valid PDF file');
+                          e.target.value = null; // Reset file input
+                        }
+                      }}
+                      className="text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+                    />
+                  </div>
+                  
+                  {/* PDFs List */}
+                  {site.pdfs && site.pdfs.length > 0 ? (
+                    <div className="space-y-2">
+                      {site.pdfs.map(pdf => (
+                        <div key={pdf.id} className="flex justify-between items-center bg-gray-700 rounded p-2">
+                          <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-sm truncate" title={pdf.filename}>{pdf.filename}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this PDF?')) {
+                                axios.delete(
+                                  `${API}/websites/${site.id}/pdfs/${pdf.id}`,
+                                  getAuthHeader()
+                                ).then(() => {
+                                  toast.success('PDF deleted successfully');
+                                  fetchWebsites();
+                                }).catch(error => {
+                                  toast.error('Failed to delete PDF');
+                                  console.error('Error deleting PDF:', error);
+                                });
+                              }
+                            }}
+                            className="text-red-400 hover:text-red-300 p-1"
+                            title="Delete PDF"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-sm">No PDFs uploaded yet</p>
+                  )}
                 </div>
               </div>
             ))}
