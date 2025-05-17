@@ -217,13 +217,16 @@ const Login = () => {
     setLoading(true);
     
     try {
+      console.log('Attempting login with:', { email });
       const result = await login(email, password);
+      console.log('Login result:', result);
       if (result.needsVerification) {
         setShowVerification(true);
         toast.success('Please check your email for a verification code');
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Login form error:', error);
+      toast.error(error.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -240,13 +243,16 @@ const Login = () => {
     setLoading(true);
     
     try {
+      console.log('Attempting verification with:', { email, code });
       const result = await verify2FA(email, code);
+      console.log('Verification result:', result);
       if (result.success) {
         toast.success('Login successful');
         navigate('/admin');
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Verification form error:', error);
+      toast.error(error.message || 'Verification failed');
     } finally {
       setLoading(false);
     }
