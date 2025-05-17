@@ -203,10 +203,6 @@ class Booking(BaseModel):
     status: str = "pending"  # pending, confirmed, cancelled
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-class StripeConfig(BaseModel):
-    publishable_key: str
-    secret_key: str
-
 class UserBase(BaseModel):
     email: EmailStr
 
