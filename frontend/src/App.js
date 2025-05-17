@@ -155,9 +155,9 @@ const ChatMessage = ({ message, isUser }) => {
         {isUser ? (
           message
         ) : (
-          <ReactMarkdown className="markdown-content">
-            {message}
-          </ReactMarkdown>
+          <div className="markdown-content">
+            <ReactMarkdown>{message}</ReactMarkdown>
+          </div>
         )}
       </div>
     </div>
