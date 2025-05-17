@@ -345,8 +345,11 @@ async def get_status_checks():
 # Authentication Routes
 @api_router.post("/login")
 async def login(login_request: LoginRequest):
+    logging.info(f"Login attempt for email: {login_request.email}")
+    
     # For demo purposes, only check against the hard-coded admin credentials
     if login_request.email != ADMIN_EMAIL or login_request.password != ADMIN_PASSWORD:
+        logging.warning(f"Invalid credentials for email: {login_request.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Generate and store 2FA code
