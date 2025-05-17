@@ -410,16 +410,19 @@ async def login(login_request: LoginRequest):
     
     # Send 2FA code via email using Mailtrap
     email_body = f"""
-    Your verification code for Ryan's Brain AI is: {code}
-    
-    This code will expire in 10 minutes.
-    
-    If you didn't request this code, please ignore this email.
+Hello,
+
+Your verification code for Ryan's Brain AI is: {code}
+
+This code will expire in 10 minutes. If you didn't request this code, please ignore this email or contact support.
+
+Thank you,
+Ryan's Brain AI Team
     """
     
     send_email(
         login_request.email,
-        "Your 2FA Code for Ryan's Brain AI",
+        "Your Verification Code for Ryan's Brain AI",
         email_body
     )
     
