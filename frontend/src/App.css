@@ -7,10 +7,19 @@
 }
 
 /* Particle Animation */
-@keyframes particle-pulse {
+@keyframes sphere-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sphere-pulse {
   0% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 0.9;
   }
   50% {
     transform: scale(1.05);
@@ -18,51 +27,134 @@
   }
   100% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 0.9;
   }
 }
 
-.particle-container {
-  position: relative;
-  width: 180px;
-  height: 180px;
-  margin: 0 auto;
+@keyframes sphere-glow {
+  0% {
+    filter: brightness(1) blur(10px);
+  }
+  50% {
+    filter: brightness(1.3) blur(15px);
+  }
+  100% {
+    filter: brightness(1) blur(10px);
+  }
 }
 
-.particle {
+@keyframes sphere-flare {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1) translateX(0) translateY(0);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(1.2) translateX(10px) translateY(-10px);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.9) translateX(-5px) translateY(5px);
+  }
+  75% {
+    opacity: 0.5;
+    transform: scale(1.1) translateX(-10px) translateY(-5px);
+  }
+}
+
+.energy-sphere-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  perspective: 800px;
+}
+
+.energy-sphere {
   position: absolute;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.2) 70%, transparent 100%);
-  animation: particle-pulse 3s infinite ease-in-out;
+  background: radial-gradient(circle, rgba(64, 124, 247, 0.8) 0%, rgba(30, 70, 180, 0.4) 60%, transparent 80%);
+  box-shadow: 
+    0 0 30px rgba(64, 124, 247, 0.6),
+    0 0 60px rgba(64, 124, 247, 0.3);
+  transform-style: preserve-3d;
+  animation: 
+    sphere-rotate 20s linear infinite,
+    sphere-pulse 4s ease-in-out infinite;
 }
 
-.particle::before {
+.energy-sphere::before {
   content: "";
   position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  filter: blur(20px);
   z-index: -1;
-  filter: blur(10px);
+  animation: sphere-glow 4s infinite ease-in-out;
 }
 
-/* Animated noise effect */
-.noise {
+.energy-sphere-ring {
   position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.3;
-  mix-blend-mode: screen;
+  border: 2px solid rgba(120, 180, 255, 0.3);
+  transform-style: preserve-3d;
+  animation: sphere-rotate 15s linear infinite reverse;
 }
+
+.energy-sphere-ring:nth-child(2) {
+  width: 90%;
+  height: 90%;
+  top: 5%;
+  left: 5%;
+  border: 4px solid rgba(100, 160, 255, 0.2);
+  animation-duration: 25s;
+}
+
+.energy-sphere-ring:nth-child(3) {
+  width: 110%;
+  height: 110%;
+  top: -5%;
+  left: -5%;
+  border: 1px solid rgba(140, 200, 255, 0.1);
+  animation-duration: 30s;
+}
+
+.energy-sphere-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: sphere-rotate 10s linear infinite;
+}
+
+.energy-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: rgba(200, 230, 255, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(200, 230, 255, 0.9);
+  animation: sphere-flare 6s infinite ease-in-out;
+}
+
+.energy-particle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+.energy-particle:nth-child(2) { top: 70%; left: 80%; animation-delay: 0.5s; }
+.energy-particle:nth-child(3) { top: 40%; left: 60%; animation-delay: 1s; }
+.energy-particle:nth-child(4) { top: 80%; left: 30%; animation-delay: 1.5s; }
+.energy-particle:nth-child(5) { top: 30%; left: 70%; animation-delay: 2s; }
+.energy-particle:nth-child(6) { top: 60%; left: 20%; animation-delay: 2.5s; }
+.energy-particle:nth-child(7) { top: 50%; left: 90%; animation-delay: 3s; }
+.energy-particle:nth-child(8) { top: 10%; left: 40%; animation-delay: 3.5s; }
+.energy-particle:nth-child(9) { top: 90%; left: 50%; animation-delay: 4s; }
+.energy-particle:nth-child(10) { top: 15%; left: 85%; animation-delay: 4.5s; }
 
 /* Chat container styles */
 .chat-container {
