@@ -276,7 +276,7 @@ def send_email(to_email: str, subject: str, body: str):
         
         # Send email - using the from_email as the sender
         logging.info(f"Attempting to send email from {from_email} via {smtp_host}")
-        server.sendmail(smtp_user, to_email, message.as_string())
+        server.sendmail(from_email, to_email, message.as_string())
         server.quit()
         
         logging.info(f"Email sent to {to_email} via {smtp_host}")
