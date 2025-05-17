@@ -843,6 +843,244 @@ const ServicePartnerList = ({ productId, onEdit, onDelete, getAuthHeader }) => {
   );
 };
 
+// Time Slot Manager Component
+const TimeSlotManager = ({ partnerId, partnerName, getAuthHeader, onUpdate }) => {
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [price, setPrice] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [addingSlot, setAddingSlot] = useState(false);
+
+  useEffect(() => {
+    fetchTimeSlots();
+  }, [partnerId]);
+
+  const fetchTimeSlots = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/service-partners/${partnerId}/timeslots`, getAuthHeader());
+      setTimeSlots(response.data);
+    } catch (error) {
+      console.error('Error fetching time slots:', error);
+      toast.error('Failed to load time slots');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTimeSlot = async (e) => {
+    e.preventDefault();
+
+    if (!date || !startTime || !endTime || !price) {
+      toast.error('All fields are required');
+      return;
+    }
+
+    // Validate price is a number
+    const priceNumber = parseFloat(price);
+    if (isNaN(priceNumber) || priceNumber <= 0) {
+      toast.error('Price must be a positive number');
+      return;
+    }
+
+    setAddingSlot(true);
+    try {
+      await axios.post(
+        `${API}/service-partners/${partnerId}/timeslots`,
+        {
+          date,
+          start_time: startTime,
+          end_time: endTime,
+          price: priceNumber,
+          currency
+        },
+        getAuthHeader()
+      );
+
+      // Reset form
+      setDate('');
+      setStartTime('');
+      setEndTime('');
+      setPrice('');
+      setShowAddForm(false);
+      
+      toast.success('Time slot added successfully');
+      
+      // Refresh time slots
+      await fetchTimeSlots();
+      
+      // Notify parent component
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error('Error adding time slot:', error);
+      toast.error(error.response?.data?.detail || 'Failed to add time slot');
+    } finally {
+      setAddingSlot(false);
+    }
+  };
+
+  const handleDeleteTimeSlot = async (slotId) => {
+    if (!window.confirm('Are you sure you want to delete this time slot?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `${API}/service-partners/${partnerId}/timeslots/${slotId}`,
+        getAuthHeader()
+      );
+      
+      toast.success('Time slot deleted successfully');
+      
+      // Refresh time slots
+      await fetchTimeSlots();
+      
+      // Notify parent component
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error('Error deleting time slot:', error);
+      toast.error('Failed to delete time slot');
+    }
+  };
+
+  return (
+    <div className="time-slot-manager">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Time Slots for {partnerName}</h3>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+        >
+          {showAddForm ? 'Cancel' : 'Add Time Slot'}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="bg-gray-800 p-3 rounded mb-4">
+          <form onSubmit={handleAddTimeSlot} className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="admin-input w-full"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Start Time</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="admin-input w-full"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">End Time</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="admin-input w-full"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Price</label>
+                <div className="flex">
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="admin-input rounded-r-none w-20"
+                  >
+                    <option value="USD">$</option>
+                    <option value="EUR">€</option>
+                    <option value="GBP">£</option>
+                  </select>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="49.99"
+                    className="admin-input rounded-l-none flex-1"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={addingSlot}
+                className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+              >
+                {addingSlot ? 'Adding...' : 'Add Time Slot'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-4 text-gray-400">Loading time slots...</div>
+      ) : timeSlots.length === 0 ? (
+        <div className="text-center py-4 text-gray-400">No time slots available. Add one to get started.</div>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-5 gap-2 text-sm font-medium text-gray-400 pb-2 border-b border-gray-700">
+            <div>Date</div>
+            <div>Time</div>
+            <div>Price</div>
+            <div>Status</div>
+            <div></div>
+          </div>
+          {timeSlots.map(slot => (
+            <div key={slot.id} className="grid grid-cols-5 gap-2 text-sm py-2 border-b border-gray-800">
+              <div>{new Date(slot.date).toLocaleDateString()}</div>
+              <div>{slot.start_time} - {slot.end_time}</div>
+              <div>{slot.currency === 'USD' ? '$' : slot.currency === 'EUR' ? '€' : '£'}{parseFloat(slot.price).toFixed(2)}</div>
+              <div>
+                {slot.available ? (
+                  <span className="text-green-400">Available</span>
+                ) : (
+                  <span className="text-red-400">Booked</span>
+                )}
+              </div>
+              <div className="text-right">
+                {slot.available && (
+                  <button
+                    onClick={() => handleDeleteTimeSlot(slot.id)}
+                    className="text-red-400 hover:text-red-300"
+                    title="Delete time slot"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Service Partner Form Component
 const ServicePartnerForm = ({ partner, productId, onSave, onCancel, getAuthHeader }) => {
   const [name, setName] = useState(partner ? partner.name : '');
