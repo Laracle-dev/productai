@@ -118,15 +118,37 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Animated Particle Bubble
+const ParticleBubble = ({ isAnimating = true }) => {
+  return (
+    <div className="particle-container">
+      <motion.div 
+        className="particle"
+        animate={isAnimating ? {
+          scale: [1, 1.05, 1],
+          opacity: [0.8, 1, 0.8],
+        } : {}}
+        transition={isAnimating ? {
+          duration: 3,
+          repeat: Infinity,
+          repeatType: "loop"
+        } : {}}
+      >
+        <div className="noise"></div>
+      </motion.div>
+    </div>
+  );
+};
+
 // Chat Message Component
 const ChatMessage = ({ message, isUser }) => {
   return (
-    <div className={`my-2 ${isUser ? 'text-right' : 'text-left'}`}>
+    <div className={`my-4 ${isUser ? 'text-right' : 'text-left'}`}>
       <div
         className={`inline-block max-w-[80%] rounded-lg px-4 py-2 ${
           isUser
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-gray-200 text-gray-800 rounded-bl-none'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-800 text-white'
         }`}
       >
         {message}
@@ -135,37 +157,13 @@ const ChatMessage = ({ message, isUser }) => {
   );
 };
 
-// Animated Chat Bubble for Assistant
-const AnimatedChatBubble = ({ message }) => {
+// Question Chip Component
+const QuestionChip = ({ icon, question, onClick }) => {
   return (
-    <motion.div
-      className="my-2 text-left"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <motion.div
-        className="inline-block max-w-[80%] rounded-lg px-4 py-2 bg-gray-200 text-gray-800 rounded-bl-none"
-        initial={{ scale: 0.8 }}
-        animate={{ 
-          scale: [0.8, 1.05, 1],
-          rotate: [-1, 1, -1, 1, 0]
-        }}
-        transition={{ 
-          duration: 0.5,
-          times: [0, 0.6, 1],
-          ease: "easeInOut" 
-        }}
-      >
-        <motion.span
-          animate={{ opacity: [0, 1] }}
-          transition={{ duration: 0.3 }}
-        >
-          {message}
-        </motion.span>
-      </motion.div>
-    </motion.div>
+    <div className="question-chip" onClick={onClick}>
+      <span className="question-chip-icon">{icon}</span>
+      <span>{question}</span>
+    </div>
   );
 };
 
@@ -233,7 +231,7 @@ const Login = () => {
   };
   
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+    <div className="login-container">
       <h2 className="text-2xl font-bold mb-6 text-center">
         {showVerification ? 'Verify 2FA Code' : 'Admin Login'}
       </h2>
@@ -241,27 +239,27 @@ const Login = () => {
       {!showVerification ? (
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="login-input"
               placeholder="admin@example.com"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="login-input"
               placeholder="••••••••"
               required
             />
@@ -269,25 +267,25 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="login-button mt-4"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       ) : (
         <form onSubmit={handleVerify} className="space-y-4">
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-300 mb-4">
             A verification code has been sent to your email. Please enter it below.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Verification Code
             </label>
             <input
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="login-input"
               placeholder="123456"
               required
             />
@@ -295,14 +293,14 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="login-button"
           >
             {loading ? 'Verifying...' : 'Verify Code'}
           </button>
           <button
             type="button"
             onClick={() => setShowVerification(false)}
-            className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            className="w-full bg-gray-700 text-white py-2 px-4 rounded-md hover:bg-gray-600 mt-2"
           >
             Back to Login
           </button>
@@ -315,9 +313,9 @@ const Login = () => {
 // Unauthorized Page
 const Unauthorized = () => {
   return (
-    <div className="max-w-lg mx-auto mt-20 p-6 bg-white rounded-lg shadow-lg text-center">
-      <h2 className="text-2xl font-bold mb-4 text-red-600">Access Denied</h2>
-      <p className="text-gray-700 mb-6">
+    <div className="max-w-lg mx-auto mt-20 p-6 bg-gray-800 rounded-lg shadow-lg text-center">
+      <h2 className="text-2xl font-bold mb-4 text-red-400">Access Denied</h2>
+      <p className="text-gray-300 mb-6">
         You don't have permission to access this page. Please contact an administrator.
       </p>
       <a 
@@ -336,7 +334,15 @@ const Chat = () => {
   const [conversation, setConversation] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showParticle, setShowParticle] = useState(true);
   const chatContainerRef = useRef(null);
+  
+  // Example questions
+  const exampleQuestions = [
+    { icon: "💪", question: "Core exercises I can do without equipment?" },
+    { icon: "📺", question: "Must-watch YouTube channels for personal development?" },
+    { icon: "📚", question: "Self improvement book recommendations that are fun to read" }
+  ];
   
   // Scroll to bottom of chat when conversation updates
   useEffect(() => {
@@ -345,8 +351,17 @@ const Chat = () => {
     }
   }, [conversation]);
 
+  // Hide the particle animation after first message
+  useEffect(() => {
+    if (conversation.length > 0) {
+      setShowParticle(false);
+    } else {
+      setShowParticle(true);
+    }
+  }, [conversation]);
+
   const handleSendMessage = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     
     if (!message.trim()) return;
     
@@ -354,6 +369,7 @@ const Chat = () => {
     setConversation(prev => [...prev, { content: message, role: 'user' }]);
     
     // Clear input field
+    const sentMessage = message;
     setMessage('');
     
     // Set loading state
@@ -361,7 +377,7 @@ const Chat = () => {
     
     try {
       const response = await axios.post(`${API}/chat`, {
-        message: message,
+        message: sentMessage,
         conversation_id: conversationId
       });
       
@@ -383,25 +399,38 @@ const Chat = () => {
     }
   };
 
+  const handleQuestionClick = (question) => {
+    setMessage(question);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-white shadow-md rounded-lg overflow-hidden">
-      <div className="bg-blue-600 text-white p-4">
-        <h2 className="text-xl font-bold">Product Assistant</h2>
-        <p className="text-sm text-blue-100">Ask me anything about our products</p>
+    <div className="flex flex-col h-full max-w-2xl mx-auto">
+      <div className="text-center pt-8 pb-2">
+        <h1 className="text-3xl font-bold mb-1">ASK PRODUCT AI</h1>
       </div>
       
+      {showParticle && conversation.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center py-8">
+          <ParticleBubble isAnimating={true} />
+          <p className="mt-6 text-gray-400 text-center max-w-sm">
+            We believe your personal life is private.
+            <br />
+            Read more about our <span className="underline">data philosophy</span> ❤️
+          </p>
+        </div>
+      )}
+      
       {/* Chat messages container */}
-      <div 
-        ref={chatContainerRef}
-        className="flex-1 p-4 overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 240px)' }}
-      >
-        {conversation.length === 0 ? (
-          <div className="text-center text-gray-500 my-8">
-            <p>👋 Hi there! Ask me anything about our products.</p>
-          </div>
-        ) : (
-          conversation.map((msg, index) => (
+      {(!showParticle || conversation.length > 0) && (
+        <div 
+          ref={chatContainerRef}
+          className="flex-1 p-4 overflow-y-auto"
+          style={{ maxHeight: 'calc(100vh - 280px)' }}
+        >
+          {conversation.map((msg, index) => (
             msg.role === 'user' ? (
               <ChatMessage 
                 key={index} 
@@ -409,69 +438,77 @@ const Chat = () => {
                 isUser={true} 
               />
             ) : (
-              <AnimatedChatBubble
+              <ChatMessage
                 key={index}
                 message={msg.content}
+                isUser={false}
               />
             )
-          ))
-        )}
-        
-        {/* Loading animation */}
-        {loading && (
-          <div className="my-2 text-left">
-            <motion.div 
-              className="inline-block bg-gray-200 text-gray-800 rounded-lg px-4 py-2 rounded-bl-none"
-              animate={{
-                scale: [1, 1.05, 1],
-                rotate: [-1, 1, -1, 1, 0],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                repeatType: "loop"
-              }}
-            >
-              <motion.span
-                className="inline-block"
-                animate={{
-                  opacity: [0, 1, 0]
-                }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  repeatType: "loop"
-                }}
-              >
-                Thinking...
-              </motion.span>
-            </motion.div>
+          ))}
+          
+          {/* Loading animation */}
+          {loading && (
+            <div className="my-4 text-left">
+              <div className="inline-block bg-gray-800 text-white rounded-lg px-4 py-2">
+                <motion.span
+                  className="inline-block"
+                  animate={{
+                    opacity: [0, 1, 0]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    repeat: Infinity,
+                    repeatType: "loop"
+                  }}
+                >
+                  Thinking...
+                </motion.span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Example questions */}
+      {conversation.length === 0 && (
+        <div className="px-4 py-2">
+          <div className="flex flex-wrap -mx-2">
+            {exampleQuestions.map((q, index) => (
+              <div key={index} className="w-full md:w-1/2 lg:w-1/3 px-2 mb-2">
+                <QuestionChip 
+                  icon={q.icon} 
+                  question={q.question} 
+                  onClick={() => handleQuestionClick(q.question)}
+                />
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
       {/* Message input form */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t">
-        <div className="flex space-x-2">
+      <div className="p-4 mt-auto">
+        <form onSubmit={handleSendMessage} className="relative">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your question here..."
-            className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Self improvement book recommendations that are fun to read"
+            className="search-input w-full pr-12"
             disabled={loading}
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="send-button absolute right-2 top-1/2 transform -translate-y-1/2"
             disabled={loading || !message.trim()}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18.3334 1.66666L9.16669 10.8333" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18.3334 1.66666L12.5 18.3333L9.16669 10.8333L1.66669 7.49999L18.3334 1.66666Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
@@ -488,7 +525,7 @@ const WebsiteManager = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  // Get auth token for API requests
+  // Get auth header for API requests
   const getAuthHeader = () => ({
     headers: { Authorization: `Bearer ${user.token}` }
   });
@@ -641,11 +678,11 @@ const WebsiteManager = () => {
       </div>
       
       {/* API Key Configuration */}
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+      <div className="admin-container mb-6">
         <h2 className="text-xl font-bold mb-4">Claude API Configuration</h2>
         <form onSubmit={handleSetApiKey} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Claude API Key
             </label>
             <input
@@ -653,12 +690,12 @@ const WebsiteManager = () => {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Enter your Claude API key"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="admin-input w-full"
             />
           </div>
           <button
             type="submit"
-            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="admin-button bg-purple-600 hover:bg-purple-700"
           >
             Save API Key
           </button>
@@ -666,11 +703,11 @@ const WebsiteManager = () => {
       </div>
 
       {/* Add Website Form */}
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+      <div className="admin-container mb-6">
         <h2 className="text-xl font-bold mb-4">Add Website</h2>
         <form onSubmit={handleAddWebsite} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Title
             </label>
             <input
@@ -678,11 +715,11 @@ const WebsiteManager = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Product Name or Website Title"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="admin-input w-full"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               URL
             </label>
             <input
@@ -690,25 +727,25 @@ const WebsiteManager = () => {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://example.com/product"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="admin-input w-full"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Description (Optional)
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of the product or website"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="admin-input w-full"
               rows="3"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="admin-button"
           >
             {loading ? 'Adding...' : 'Add Website'}
           </button>
@@ -716,28 +753,28 @@ const WebsiteManager = () => {
       </div>
       
       {/* Website List */}
-      <div className="bg-white shadow-md rounded-lg p-6">
+      <div className="admin-container">
         <h2 className="text-xl font-bold mb-4">Managed Websites</h2>
         
         {websites.length === 0 ? (
-          <p className="text-gray-500">No websites added yet.</p>
+          <p className="text-gray-400">No websites added yet.</p>
         ) : (
           <div className="space-y-4">
             {websites.map((site) => (
-              <div key={site.id} className="border rounded-md p-4">
+              <div key={site.id} className="border border-gray-700 rounded-md p-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold">{site.title}</h3>
+                    <h3 className="font-bold text-white">{site.title}</h3>
                     <a 
                       href={site.url} 
                       target="_blank" 
                       rel="noreferrer"
-                      className="text-blue-600 hover:underline text-sm"
+                      className="text-blue-400 hover:underline text-sm"
                     >
                       {site.url}
                     </a>
                     {site.description && (
-                      <p className="text-gray-600 mt-1">{site.description}</p>
+                      <p className="text-gray-400 mt-1">{site.description}</p>
                     )}
                     <p className="text-gray-500 text-xs mt-2">
                       Last scraped: {site.last_scraped ? new Date(site.last_scraped).toLocaleString() : 'Never'}
@@ -747,7 +784,7 @@ const WebsiteManager = () => {
                     <button
                       onClick={() => handleRefreshWebsite(site.id)}
                       disabled={refreshing[site.id]}
-                      className="text-green-600 hover:text-green-800 p-1"
+                      className="text-green-400 hover:text-green-300 p-1"
                       title="Refresh content"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -756,7 +793,7 @@ const WebsiteManager = () => {
                     </button>
                     <button
                       onClick={() => handleDeleteWebsite(site.id)}
-                      className="text-red-600 hover:text-red-800 p-1"
+                      className="text-red-400 hover:text-red-300 p-1"
                       title="Delete website"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -785,9 +822,9 @@ const Navigation = () => {
   };
   
   return (
-    <nav className="bg-gray-800 text-white p-4">
+    <nav className="bg-black text-white p-4 border-b border-gray-800">
       <div className="container mx-auto flex justify-between items-center">
-        <a href="/" className="text-xl font-bold">Product AI Chatbot</a>
+        <a href="/" className="text-xl font-bold">Product AI</a>
         <div className="space-x-4">
           <a href="/" className="hover:text-blue-300">Chat</a>
           {user ? (
@@ -812,21 +849,25 @@ const Navigation = () => {
 // Main App Component
 function App() {
   return (
-    <div className="App flex flex-col min-h-screen bg-gray-100">
-      <Toaster position="top-right" />
+    <div className="App flex flex-col min-h-screen">
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        }}
+      />
       
       <AuthProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={
               <>
-                <Navigation />
-                <main className="flex-1 container mx-auto p-4">
+                <main className="flex-1 container mx-auto">
                   <Chat />
                 </main>
-                <footer className="bg-gray-800 text-white p-4 text-center text-sm">
-                  <p>© 2025 Product AI Chatbot. All rights reserved.</p>
-                </footer>
               </>
             } />
             
@@ -836,9 +877,6 @@ function App() {
                 <main className="flex-1 container mx-auto p-4">
                   <Login />
                 </main>
-                <footer className="bg-gray-800 text-white p-4 text-center text-sm">
-                  <p>© 2025 Product AI Chatbot. All rights reserved.</p>
-                </footer>
               </>
             } />
             
@@ -848,9 +886,6 @@ function App() {
                 <main className="flex-1 container mx-auto p-4">
                   <Unauthorized />
                 </main>
-                <footer className="bg-gray-800 text-white p-4 text-center text-sm">
-                  <p>© 2025 Product AI Chatbot. All rights reserved.</p>
-                </footer>
               </>
             } />
             
@@ -860,9 +895,6 @@ function App() {
                 <main className="flex-1 container mx-auto p-4">
                   <WebsiteManager />
                 </main>
-                <footer className="bg-gray-800 text-white p-4 text-center text-sm">
-                  <p>© 2025 Product AI Chatbot. All rights reserved.</p>
-                </footer>
               </ProtectedRoute>
             } />
           </Routes>
