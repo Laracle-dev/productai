@@ -68,7 +68,6 @@ Ryan's Brain AI Team
         logging.info(f"Sending test email using {smtp_user} as sender...")
         server.sendmail(smtp_user, test_email, message.as_string())
         server.quit()
-        server.quit()
         
         logging.info(f"Test email sent successfully to {test_email}")
         return True
