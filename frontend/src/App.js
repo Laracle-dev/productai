@@ -28,9 +28,11 @@ const AuthProvider = ({ children }) => {
   
   const checkAuthStatus = async (token) => {
     try {
+      console.log('Checking auth status with token:', token ? token.substring(0, 10) + '...' : 'null');
       const response = await axios.get(`${API}/auth/check`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('Auth check response:', response.data);
       setUser({
         email: response.data.email,
         isAdmin: response.data.is_admin,
