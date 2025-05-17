@@ -262,7 +262,8 @@ const Login = () => {
       console.log('Verification result:', result);
       if (result.success) {
         toast.success('Login successful');
-        navigate('/admin');
+        // Use navigate instead of the direct route change
+        navigate('/admin', { replace: true });
       }
     } catch (error) {
       console.error('Verification form error:', error);
