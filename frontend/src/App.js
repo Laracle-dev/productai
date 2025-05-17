@@ -1383,6 +1383,12 @@ const ServicePartnerManager = () => {
     setShowForm(true);
   };
   
+  const handleManageTimeSlots = (partner) => {
+    setSelectedPartner(partner);
+    setShowTimeSlots(true);
+    setShowForm(false);
+  };
+  
   const handleDeletePartner = async (partnerId) => {
     if (window.confirm('Are you sure you want to delete this service partner?')) {
       try {
