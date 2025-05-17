@@ -1222,7 +1222,7 @@ const Navigation = () => {
   return (
     <nav className="bg-black text-white p-4 border-b border-gray-800">
       <div className="container mx-auto flex justify-between items-center">
-        <a href="/" className="text-xl font-bold">Product AI</a>
+        <a href="/" className="text-xl font-bold">Ryan's Brain AI</a>
         <div className="space-x-4">
           <a href="/" className="hover:text-blue-300">Chat</a>
           {user ? (
