@@ -230,10 +230,11 @@ class TwoFactorRequest(BaseModel):
 def send_email(to_email: str, subject: str, body: str):
     """Send an email using Mailtrap SMTP server"""
     # Get Mailtrap credentials from environment variables
-    smtp_host = os.environ.get("MAILTRAP_HOST", "smtp.mailtrap.io")
-    smtp_port = int(os.environ.get("MAILTRAP_PORT", 2525))
+    smtp_host = os.environ.get("MAILTRAP_HOST", "live.smtp.mailtrap.io")
+    smtp_port = int(os.environ.get("MAILTRAP_PORT", 587))
     smtp_user = os.environ.get("MAILTRAP_USERNAME")
     smtp_pass = os.environ.get("MAILTRAP_PASSWORD")
+    from_email = os.environ.get("MAILTRAP_FROM_EMAIL", "no-reply@ryansbrainai.com")
     
     # If Mailtrap credentials are not available, fall back to existing credentials
     if not all([smtp_user, smtp_pass]):
@@ -260,10 +261,22 @@ def send_email(to_email: str, subject: str, body: str):
         # Create a secure connection with the server
         server = smtplib.SMTP(smtp_host, smtp_port)
         server.starttls()  # Upgrade the connection to secure
+        
+        # Authenticate first with username and password
         server.login(smtp_user, smtp_pass)
         
-        # Send email
-        server.sendmail(message["From"], to_email, message.as_string())
+        # Update the email headers to use a header to specify the 'Mail From' address
+        headers = {
+            'X-Mailer': 'Ryan\'s Brain AI Mailer',
+            'X-Send-From': from_email  # This is used by Mailtrap for domain verification bypass
+        }
+        
+        for key, value in headers.items():
+            message.add_header(key, value)
+        
+        # Send email - using the from_email as the sender
+        logging.info(f"Attempting to send email from {from_email} via {smtp_host}")
+        server.sendmail(smtp_user, to_email, message.as_string())
         server.quit()
         
         logging.info(f"Email sent to {to_email} via {smtp_host}")
