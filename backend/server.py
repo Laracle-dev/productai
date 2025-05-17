@@ -471,12 +471,16 @@ async def chat(chat_request: ChatRequest):
     
     try:
         # Create the Claude API request
+        # Combine system prompt with context
+        enhanced_system_prompt = system_prompt
+        if context:
+            enhanced_system_prompt += f"\n\nHere is information about our products that you can use to answer questions:\n{context}"
+        
         response = client.messages.create(
             model="claude-3-opus-20240229",
-            system=system_prompt,
+            system=enhanced_system_prompt,
             max_tokens=1024,
-            messages=messages,
-            context=context
+            messages=messages
         )
         
         # Extract the response
