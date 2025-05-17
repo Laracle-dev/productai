@@ -382,7 +382,11 @@ async def update_website(website_id: str, website_update: WebsiteURLUpdate, curr
     # Update fields if provided
     update_data = website_update.dict(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(website_data, field, value)
+        # Convert HttpUrl to string if present
+        if field == "url" and value:
+            setattr(website_data, field, str(value))
+        else:
+            setattr(website_data, field, value)
     
     # If URL changed, re-scrape content
     if "url" in update_data:
