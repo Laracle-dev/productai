@@ -38,7 +38,9 @@ const AuthProvider = ({ children }) => {
       });
     } catch (error) {
       // Token is invalid or expired
+      console.error('Auth check failed:', error);
       localStorage.removeItem('token');
+      setUser(null);
     } finally {
       setLoading(false);
     }
