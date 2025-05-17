@@ -65,8 +65,8 @@ Ryan's Brain AI Team
             message.add_header(key, value)
         
         # Send email
-        logging.info(f"Sending test email using {smtp_user} as sender...")
-        server.sendmail(smtp_user, test_email, message.as_string())
+        logging.info(f"Sending test email using {from_email} as sender...")
+        server.sendmail(from_email, test_email, message.as_string())
         server.quit()
         
         logging.info(f"Test email sent successfully to {test_email}")
