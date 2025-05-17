@@ -119,24 +119,27 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Animated Particle Bubble
-const ParticleBubble = ({ isAnimating = true }) => {
+// Energy Sphere Component
+const EnergySphere = ({ isAnimating = true }) => {
   return (
-    <div className="particle-container">
-      <motion.div 
-        className="particle"
-        animate={isAnimating ? {
-          scale: [1, 1.05, 1],
-          opacity: [0.8, 1, 0.8],
-        } : {}}
-        transition={isAnimating ? {
-          duration: 3,
-          repeat: Infinity,
-          repeatType: "loop"
-        } : {}}
-      >
-        <div className="noise"></div>
-      </motion.div>
+    <div className="energy-sphere-container">
+      <div className="energy-sphere" style={{ opacity: isAnimating ? 1 : 0.5, animation: !isAnimating ? 'none' : undefined }}>
+        <div className="energy-sphere-ring"></div>
+        <div className="energy-sphere-ring"></div>
+        <div className="energy-sphere-ring"></div>
+        <div className="energy-sphere-particles">
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+          <div className="energy-particle"></div>
+        </div>
+      </div>
     </div>
   );
 };
