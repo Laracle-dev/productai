@@ -479,65 +479,9 @@ async def chat(chat_request: ChatRequest):
     context = ""
     relevant_product_ids = []
     
-    # Get all product names for checking
-    product_names = [site.get("title", "").lower() for site in websites]
-    
-    # Check if user is asking about a product we don't have
-    user_question = chat_request.message.lower()
-    
-    # Get common product and brand keywords
-    unknown_brand_detected = False
-    
-    # Extract potential product mentions
-    # Common patterns like "Do you have X", "How much is X", "Tell me about X", "X product"
-    potential_products = []
-    words = user_question.split()
-    
-    # Skip common words for product detection
-    skip_words = {"the", "a", "an", "and", "or", "but", "is", "are", "do", "does", "can", "could", "would", "should", "will", "about", "for", "with", "without", "your", "my", "their", "our", "its", "it's", "have", "has", "had", "you", "i", "we", "they", "he", "she", "it", "this", "that", "these", "those"}
-    
-    # Extract potential product names (words with capital letters or multi-word phrases)
-    for i in range(len(words)):
-        # Skip short words and common words
-        if len(words[i]) <= 2 or words[i] in skip_words:
-            continue
-            
-        # Check if this looks like a product name (not a common word)
-        if words[i] not in skip_words and len(words[i]) > 3:
-            potential_products.append(words[i])
-            
-        # Look for 2-word product names
-        if i < len(words) - 1 and words[i] not in skip_words and words[i+1] not in skip_words:
-            potential_products.append(f"{words[i]} {words[i+1]}")
-            
-        # Look for 3-word product names
-        if i < len(words) - 2 and words[i] not in skip_words and words[i+1] not in skip_words and words[i+2] not in skip_words:
-            potential_products.append(f"{words[i]} {words[i+1]} {words[i+2]}")
-    
-    # Check if any potential product is NOT in our database
-    for product in potential_products:
-        product_match = False
-        for db_product in product_names:
-            if product in db_product or db_product in product:
-                product_match = True
-                break
-                
-        if not product_match and len(product) > 3:  # Avoid false positives with short terms
-            # This might be a product we don't support
-            unknown_brand_detected = True
-            logging.info(f"Detected question about unknown product: {product}")
-            break
-            
-    # If we detect a question about an unknown product, return custom message
-    if unknown_brand_detected and len(potential_products) > 0:
-        return {
-            "id": str(uuid.uuid4()),
-            "response": "We're sorry but we are not compatible with this brand right now. Please ask about products we support, or contact the administrator to add information about more products.",
-            "conversation_id": conversation.id
-        }
-    
     if websites:
         # First pass - find the website most relevant to the question
+        user_question = chat_request.message.lower()
         
         # Sort websites by potential relevance (simple keyword matching)
         sorted_websites = sorted(
