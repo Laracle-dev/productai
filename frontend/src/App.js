@@ -1478,6 +1478,134 @@ const ServicePartnerManager = () => {
   );
 };
 
+// Stripe Configuration Component
+const StripeConfigForm = ({ getAuthHeader }) => {
+  const [publishableKey, setPublishableKey] = useState('');
+  const [secretKey, setSecretKey] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [hasStripeKeys, setHasStripeKeys] = useState(false);
+
+  useEffect(() => {
+    checkStripeConfig();
+  }, []);
+
+  const checkStripeConfig = async () => {
+    setCheckingStatus(true);
+    try {
+      const response = await axios.get(`${API}/config/stripe`, getAuthHeader());
+      setHasStripeKeys(response.data.has_keys);
+      if (response.data.publishable_key) {
+        setPublishableKey(response.data.publishable_key);
+      }
+    } catch (error) {
+      console.error('Error checking Stripe config:', error);
+      toast.error('Failed to check Stripe configuration');
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!publishableKey.trim() || !secretKey.trim()) {
+      toast.error('Both Stripe keys are required');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post(
+        `${API}/config/stripe`,
+        { publishable_key: publishableKey, secret_key: secretKey },
+        getAuthHeader()
+      );
+
+      setSecretKey('');
+      toast.success('Stripe configuration updated successfully');
+      checkStripeConfig();
+    } catch (error) {
+      console.error('Error setting Stripe config:', error);
+      toast.error('Failed to update Stripe configuration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (checkingStatus) {
+    return <div className="text-gray-400 py-2">Checking Stripe configuration...</div>;
+  }
+
+  return (
+    <div>
+      {hasStripeKeys ? (
+        <div className="mb-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="bg-green-500 h-3 w-3 rounded-full"></div>
+            <span className="text-green-400 font-medium">Stripe Integration Connected</span>
+          </div>
+          <p className="text-gray-300 mb-2">
+            Your Stripe integration is set up. You can now accept payments for service bookings.
+          </p>
+          <div className="flex items-center space-x-2 mt-4 p-3 bg-gray-700 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-gray-300">
+              To update your Stripe keys, enter new values below.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="bg-yellow-500 h-3 w-3 rounded-full"></div>
+            <span className="text-yellow-400 font-medium">Stripe Integration Not Configured</span>
+          </div>
+          <p className="text-gray-300 mb-4">
+            Enter your Stripe API keys to enable payment processing for service bookings.
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Publishable Key
+          </label>
+          <input
+            type="text"
+            value={publishableKey}
+            onChange={(e) => setPublishableKey(e.target.value)}
+            placeholder="pk_test_..."
+            className="admin-input w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Secret Key
+          </label>
+          <input
+            type="password"
+            value={secretKey}
+            onChange={(e) => setSecretKey(e.target.value)}
+            placeholder="sk_test_..."
+            className="admin-input w-full"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="admin-button bg-green-600 hover:bg-green-700"
+        >
+          {loading ? 'Saving...' : 'Save Stripe Configuration'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
 // Admin Dashboard - Website URL Management
 const WebsiteManager = () => {
   const [websites, setWebsites] = useState([]);
