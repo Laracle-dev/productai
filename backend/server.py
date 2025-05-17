@@ -448,10 +448,29 @@ async def chat(chat_request: ChatRequest):
     context = ""
     
     if websites:
-        for website in websites:
+        # First pass - find the website most relevant to the question
+        user_question = chat_request.message.lower()
+        
+        # Sort websites by potential relevance (simple keyword matching)
+        sorted_websites = sorted(
+            websites,
+            key=lambda w: sum(1 for word in user_question.split() 
+                              if word in w.get("title", "").lower() 
+                              or word in w.get("description", "").lower()),
+            reverse=True
+        )
+        
+        # Only use the top 2 most relevant websites to limit context size
+        for website in sorted_websites[:2]:
             if website.get("content_cache"):
+                # Limit each website content to about 1000 words
+                content = website.get("content_cache", "")
+                words = content.split()
+                if len(words) > 1000:
+                    content = " ".join(words[:1000]) + "..."
+                
                 context += f"\n\nContent from {website.get('title', 'Unknown')} ({website.get('url', 'No URL')}):\n"
-                context += website.get("content_cache", "")
+                context += content
     
     # Prepare messages for Claude
     system_prompt = """You are a helpful AI assistant for a product information chatbot. 
