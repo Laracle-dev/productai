@@ -433,9 +433,9 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
       return vec4(colorIn.rgb / (a + 1e-5), a);
     }
 
-    const vec3 baseColor1 = vec3(0.611765, 0.262745, 0.996078);
-    const vec3 baseColor2 = vec3(0.298039, 0.760784, 0.913725);
-    const vec3 baseColor3 = vec3(0.062745, 0.078431, 0.600000);
+    const vec3 baseColor1 = vec3(0.588, 0.117, 1.0);      // Purple: #961EFF
+    const vec3 baseColor2 = vec3(0.117, 0.313, 1.0);     // Blue: #1E50FF
+    const vec3 baseColor3 = vec3(1.0, 0.196, 0.588);     // Pink: #FF32AF
     const float innerRadius = 0.65;
     const float noiseScale = 0.7;
 
