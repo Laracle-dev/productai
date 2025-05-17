@@ -607,7 +607,7 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
     let targetHover = 0;
     let lastTime = 0;
     let currentRot = 0;
-    const rotationSpeed = 0.3; // radians per second
+    const rotationSpeed = 0.6; // increased rotation speed (radians per second)
 
     const handleMouseMove = (e) => {
       const rect = container.getBoundingClientRect();
