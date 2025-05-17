@@ -228,9 +228,51 @@ class TwoFactorRequest(BaseModel):
 
 # Email and 2FA functions
 def send_email(to_email: str, subject: str, body: str):
-    """Simulate sending an email (for demo purposes)"""
-    logging.info(f"Simulating email to {to_email}: Subject: {subject}, Body: {body}")
-    return True
+    """Send an email using Mailtrap SMTP server"""
+    # Get Mailtrap credentials from environment variables
+    smtp_host = os.environ.get("MAILTRAP_HOST", "smtp.mailtrap.io")
+    smtp_port = int(os.environ.get("MAILTRAP_PORT", 2525))
+    smtp_user = os.environ.get("MAILTRAP_USERNAME")
+    smtp_pass = os.environ.get("MAILTRAP_PASSWORD")
+    
+    # If Mailtrap credentials are not available, fall back to existing credentials
+    if not all([smtp_user, smtp_pass]):
+        smtp_host = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+        smtp_port = int(os.environ.get("EMAIL_PORT", 587))
+        smtp_user = os.environ.get("EMAIL_USER")
+        smtp_pass = os.environ.get("EMAIL_PASSWORD")
+        
+        # If still no credentials, just log the email for development
+        if not all([smtp_user, smtp_pass]):
+            logging.info(f"Simulating email to {to_email}: Subject: {subject}, Body: {body}")
+            return True
+    
+    # Create the email message
+    message = MIMEMultipart()
+    message["From"] = "no-reply@ryansbrainai.com"
+    message["To"] = to_email
+    message["Subject"] = subject
+    
+    # Add body to email
+    message.attach(MIMEText(body, "plain"))
+    
+    try:
+        # Create a secure connection with the server
+        server = smtplib.SMTP(smtp_host, smtp_port)
+        server.starttls()  # Upgrade the connection to secure
+        server.login(smtp_user, smtp_pass)
+        
+        # Send email
+        server.sendmail(message["From"], to_email, message.as_string())
+        server.quit()
+        
+        logging.info(f"Email sent to {to_email} via {smtp_host}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send email: {str(e)}")
+        # Fall back to logging the email for development purposes
+        logging.info(f"[FALLBACK] Would have sent email to {to_email}: Subject: {subject}, Body: {body}")
+        return False
 
 def generate_2fa_code():
     """Generate a 6-digit 2FA code"""
