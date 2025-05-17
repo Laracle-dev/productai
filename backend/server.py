@@ -72,7 +72,7 @@ class StatusCheckCreate(BaseModel):
 
 class WebsiteURL(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    url: HttpUrl
+    url: str
     title: str
     description: Optional[str] = None
     added_at: datetime = Field(default_factory=datetime.utcnow)
