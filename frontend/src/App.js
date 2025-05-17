@@ -2236,10 +2236,12 @@ function App() {
                     {/* Admin Navigation */}
                     <div className="bg-gray-800 rounded-lg p-4 mb-6">
                       <nav className="flex space-x-4">
-                        <div className="text-white px-3 py-2 rounded-md hover:bg-gray-700"
-                             onClick={() => window.location.href = '/admin'}>
+                        <Link
+                          to="/admin"
+                          className="text-white px-3 py-2 rounded-md hover:bg-gray-700"
+                        >
                           Products
-                        </div>
+                        </Link>
                         <div className="text-white px-3 py-2 rounded-md bg-gray-700">
                           Service Partners
                         </div>
