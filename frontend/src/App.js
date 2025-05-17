@@ -931,6 +931,75 @@ const ServicePartnerForm = ({ partner, productId, onSave, onCancel, getAuthHeade
           </select>
         )}
       </div>
+
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-300 mb-1">Booking Options</label>
+        
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <input
+              type="radio"
+              id="booking-none"
+              name="booking-type"
+              value="none"
+              checked={bookingType === 'none'}
+              onChange={() => setBookingType('none')}
+              className="h-4 w-4 text-blue-600 mr-2"
+            />
+            <label htmlFor="booking-none" className="text-gray-300">No online booking</label>
+          </div>
+          
+          <div className="flex items-center">
+            <input
+              type="radio"
+              id="booking-calendly"
+              name="booking-type"
+              value="calendly"
+              checked={bookingType === 'calendly'}
+              onChange={() => setBookingType('calendly')}
+              className="h-4 w-4 text-blue-600 mr-2"
+            />
+            <label htmlFor="booking-calendly" className="text-gray-300">Use Calendly</label>
+          </div>
+          
+          <div className="flex items-center">
+            <input
+              type="radio"
+              id="booking-custom"
+              name="booking-type"
+              value="custom"
+              checked={bookingType === 'custom'}
+              onChange={() => setBookingType('custom')}
+              className="h-4 w-4 text-blue-600 mr-2"
+            />
+            <label htmlFor="booking-custom" className="text-gray-300">Custom time slots with payment</label>
+          </div>
+        </div>
+        
+        {bookingType === 'calendly' && (
+          <div className="mt-2">
+            <input
+              type="url"
+              value={calendlyUrl}
+              onChange={(e) => setCalendlyUrl(e.target.value)}
+              className="admin-input w-full"
+              placeholder="https://calendly.com/your-link"
+              required={bookingType === 'calendly'}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Enter your full Calendly scheduling URL
+            </p>
+          </div>
+        )}
+        
+        {bookingType === 'custom' && (
+          <div className="mt-2 bg-gray-700 p-3 rounded">
+            <p className="text-sm text-gray-300">
+              You'll be able to add time slots after saving this service partner.
+            </p>
+          </div>
+        )}
+      </div>
       
       <div className="flex space-x-3">
         <button
