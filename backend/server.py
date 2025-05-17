@@ -490,9 +490,9 @@ async def chat(chat_request: ChatRequest):
     If you don't know the answer or can't find relevant information in the provided context, briefly admit it instead of making up information.
     """
     
-    # Extract conversation history
+    # Extract conversation history - limit to last 3 messages to save tokens
     messages = []
-    for msg in conversation.messages[-10:]:  # Limit to last 10 messages
+    for msg in conversation.messages[-3:]:  # Limit to last 3 messages
         messages.append({
             "role": msg.role,
             "content": msg.content
