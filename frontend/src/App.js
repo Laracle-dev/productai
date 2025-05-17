@@ -1505,6 +1505,60 @@ const WebsiteManager = () => {
               rows="3"
             />
           </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              PDF Documents (Optional)
+            </label>
+            <div className="p-3 border border-gray-700 rounded-md">
+              <p className="text-sm text-gray-400 mb-2">
+                Upload PDF documents for the chatbot to use when answering questions about this product.
+              </p>
+              <input
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files).filter(
+                    file => file.type === 'application/pdf'
+                  );
+                  setPendingPdfFiles(files);
+                }}
+                className="text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+              />
+              
+              {pendingPdfFiles.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm font-medium text-gray-300">Selected PDF files:</p>
+                  {pendingPdfFiles.map((file, index) => (
+                    <div key={index} className="flex justify-between items-center bg-gray-700 rounded p-2">
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm truncate" title={file.name}>
+                          {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newFiles = [...pendingPdfFiles];
+                          newFiles.splice(index, 1);
+                          setPendingPdfFiles(newFiles);
+                        }}
+                        className="text-red-400 hover:text-red-300 p-1"
+                        title="Remove PDF"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
           <button
             type="submit"
             disabled={loading}
