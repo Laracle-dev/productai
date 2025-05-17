@@ -256,3 +256,52 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Markdown styling */
+.markdown-content {
+  line-height: 1.5;
+}
+
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.markdown-content h1 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.15rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.05rem;
+}
+
+.markdown-content strong {
+  font-weight: bold;
+  color: #60a5fa;
+}
