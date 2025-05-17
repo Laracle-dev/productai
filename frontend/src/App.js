@@ -1414,7 +1414,7 @@ const ServicePartnerManager = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Service Partners</h2>
         
-        {!showForm && (
+        {!showForm && !showTimeSlots && (
           <button
             onClick={handleAddPartner}
             className="admin-button bg-green-600 hover:bg-green-700"
@@ -1435,6 +1435,53 @@ const ServicePartnerManager = () => {
           }}
           getAuthHeader={getAuthHeader}
         />
+      ) : showTimeSlots && selectedPartner ? (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center">
+              <button 
+                onClick={() => {
+                  setShowTimeSlots(false);
+                  setSelectedPartner(null);
+                }} 
+                className="flex items-center text-blue-400 hover:text-blue-300 mr-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Service Partners
+              </button>
+              <h2 className="text-xl font-bold">{selectedPartner.name} - Time Slots</h2>
+            </div>
+          </div>
+          <TimeSlotManager
+            partnerId={selectedPartner.id}
+            partnerName={selectedPartner.name}
+            getAuthHeader={getAuthHeader}
+            onUpdate={() => {
+              // Refresh partners list after time slot update
+              if (filterProductId) {
+                // If filtering by product, refresh only those partners
+                const fetchPartners = async () => {
+                  try {
+                    const response = await axios.get(
+                      `${API}/websites/${filterProductId}/service-partners`,
+                      getAuthHeader()
+                    );
+                    // Find and update the selected partner
+                    const updatedPartner = response.data.find(p => p.id === selectedPartner.id);
+                    if (updatedPartner) {
+                      setSelectedPartner(updatedPartner);
+                    }
+                  } catch (error) {
+                    console.error('Error refreshing partners:', error);
+                  }
+                };
+                fetchPartners();
+              }
+            }}
+          />
+        </div>
       ) : (
         <>
           <div className="mb-4">
@@ -1463,6 +1510,7 @@ const ServicePartnerManager = () => {
           <ServicePartnerList
             productId={filterProductId}
             onEdit={handleEditPartner}
+            onManageTimeSlots={handleManageTimeSlots}
             onDelete={handleDeletePartner}
             getAuthHeader={getAuthHeader}
           />
