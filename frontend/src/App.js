@@ -425,7 +425,7 @@ const Chat = () => {
       
       {showParticle && conversation.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center py-8">
-          <ParticleBubble isAnimating={true} />
+          <EnergySphere isAnimating={true} />
           <p className="mt-6 text-gray-400 text-center max-w-sm">
             Powered by Ryan's Brain - making AI personal
             <br />
