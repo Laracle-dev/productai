@@ -412,6 +412,22 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
       return dot(vec4(31.316), n);
     }
 
+    // Fractional Brownian Motion (fBm) for more detailed noise
+    float fbm(vec3 p, int octaves) {
+      float value = 0.0;
+      float amplitude = 0.5;
+      float frequency = 1.0;
+      
+      for (int i = 0; i < 8; i++) {
+        if (i >= octaves) break;
+        value += amplitude * snoise3(p * frequency);
+        amplitude *= 0.5;
+        frequency *= 2.0;
+      }
+      
+      return value;
+    }
+
     vec4 extractAlpha(vec3 colorIn) {
       float a = max(max(colorIn.r, colorIn.g), colorIn.b);
       return vec4(colorIn.rgb / (a + 1e-5), a);
@@ -420,12 +436,13 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
     const vec3 baseColor1 = vec3(0.611765, 0.262745, 0.996078);
     const vec3 baseColor2 = vec3(0.298039, 0.760784, 0.913725);
     const vec3 baseColor3 = vec3(0.062745, 0.078431, 0.600000);
-    const float innerRadius = 0.6;
-    const float noiseScale = 0.65;
+    const float innerRadius = 0.65;
+    const float noiseScale = 0.7;
 
     float light1(float intensity, float attenuation, float dist) {
       return intensity / (1.0 + dist * attenuation);
     }
+    
     float light2(float intensity, float attenuation, float dist) {
       return intensity / (1.0 + dist * dist * attenuation);
     }
@@ -439,25 +456,50 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
       float len = length(uv);
       float invLen = len > 0.0 ? 1.0 / len : 0.0;
       
-      float n0 = snoise3(vec3(uv * noiseScale, iTime * 0.5)) * 0.5 + 0.5;
+      // Create more detailed noise using fBm
+      float n0 = fbm(vec3(uv * noiseScale, iTime * 0.4), 4) * 0.5 + 0.5;
+      float n1 = fbm(vec3(uv * noiseScale * 2.0, iTime * 0.3 + 10.0), 3) * 0.5 + 0.5;
+      
+      // Use multiple noise values for more complex patterns
       float r0 = mix(mix(innerRadius, 1.0, 0.4), mix(innerRadius, 1.0, 0.6), n0);
       float d0 = distance(uv, (r0 * invLen) * uv);
-      float v0 = light1(1.0, 10.0, d0);
+      float v0 = light1(1.2, 10.0, d0);
       v0 *= smoothstep(r0 * 1.05, r0, len);
-      float cl = cos(ang + iTime * 2.0) * 0.5 + 0.5;
       
+      // Add more complex color variation
+      float cl = cos(ang + iTime * 2.0) * 0.5 + 0.5;
+      float cl2 = sin(ang * 3.0 + iTime * 1.5) * 0.5 + 0.5;
+      
+      // Inner glow with time variation
       float a = iTime * -1.0;
       vec2 pos = vec2(cos(a), sin(a)) * r0;
       float d = distance(uv, pos);
-      float v1 = light2(1.5, 5.0, d);
+      float v1 = light2(1.7, 5.0, d);
       v1 *= light1(1.0, 50.0, d0);
       
+      // Add a secondary glow light
+      float a2 = iTime * -0.7 + 3.14159 * 0.5;
+      vec2 pos2 = vec2(cos(a2), sin(a2)) * (r0 * 0.8);
+      float d2 = distance(uv, pos2);
+      float v1b = light2(0.9, 7.0, d2);
+      v1b *= light1(0.7, 60.0, d0);
+      
+      // Add surface details using the secondary noise
+      float surfaceDetail = mix(0.85, 1.15, n1);
+      
+      // Combine effects
       float v2 = smoothstep(1.0, mix(innerRadius, 1.0, n0 * 0.5), len);
       float v3 = smoothstep(innerRadius, mix(innerRadius, 1.0, 0.5), len);
       
       vec3 col = mix(color1, color2, cl);
+      col = mix(col, color3, cl2 * 0.3); // Add third color with subtle influence
       col = mix(color3, col, v0);
-      col = (col + v1) * v2 * v3;
+      col = (col + v1 + v1b * 0.6) * v2 * v3 * surfaceDetail;
+      
+      // Add subtle ripples on the surface
+      float ripple = sin(len * 20.0 - iTime * 2.0) * 0.015;
+      col += vec3(ripple);
+      
       col = clamp(col, 0.0, 1.0);
       
       return extractAlpha(col);
@@ -468,13 +510,22 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
       float size = min(iResolution.x, iResolution.y);
       vec2 uv = (fragCoord - center) / size * 2.0;
       
+      // Rotation effect
       float angle = rot;
       float s = sin(angle);
       float c = cos(angle);
       uv = vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y);
       
-      uv.x += hover * hoverIntensity * 0.1 * sin(uv.y * 10.0 + iTime);
-      uv.y += hover * hoverIntensity * 0.1 * sin(uv.x * 10.0 + iTime);
+      // Enhanced hover effect with more complex distortion
+      if (hover > 0.01) {
+        float intensity = hover * hoverIntensity;
+        uv.x += intensity * 0.12 * sin(uv.y * 10.0 + iTime);
+        uv.y += intensity * 0.12 * sin(uv.x * 10.0 + iTime * 1.1);
+        
+        // Add secondary distortion for more complex effect
+        uv.x += intensity * 0.05 * sin(uv.y * 20.0 - iTime * 0.7);
+        uv.y += intensity * 0.05 * sin(uv.x * 20.0 - iTime * 0.8);
+      }
       
       return draw(uv);
     }
