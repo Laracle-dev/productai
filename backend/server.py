@@ -382,6 +382,8 @@ async def login(login_request: LoginRequest):
 
 @api_router.post("/verify-2fa")
 async def verify_2fa(two_factor_request: TwoFactorRequest):
+    logging.info(f"2FA verification attempt for email: {two_factor_request.email}, code: {two_factor_request.code}")
+    
     # Find the 2FA code
     two_factor = await db.two_factor_codes.find_one({
         "email": two_factor_request.email,
@@ -391,11 +393,15 @@ async def verify_2fa(two_factor_request: TwoFactorRequest):
     
     # For demo, also accept "123456" as a valid code
     if not two_factor and two_factor_request.code != "123456":
+        logging.warning(f"Invalid or expired 2FA code for email: {two_factor_request.email}")
         raise HTTPException(status_code=401, detail="Invalid or expired 2FA code")
     
     # Delete the used 2FA code if it exists
     if two_factor:
         await db.two_factor_codes.delete_one({"_id": two_factor["_id"]})
+        logging.info(f"Valid 2FA code used and deleted for email: {two_factor_request.email}")
+    else:
+        logging.info(f"Using demo code 123456 for email: {two_factor_request.email}")
     
     # Generate access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -403,6 +409,8 @@ async def verify_2fa(two_factor_request: TwoFactorRequest):
         data={"sub": two_factor_request.email},
         expires_delta=access_token_expires
     )
+    
+    logging.info(f"Access token generated for email: {two_factor_request.email}")
     
     # Return token
     return {"access_token": access_token, "token_type": "bearer"}
