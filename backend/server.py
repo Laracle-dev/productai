@@ -587,6 +587,68 @@ async def check_auth(current_user: dict = Depends(get_current_active_user)):
         "is_admin": current_user.get("is_admin", False)
     }
 
+# Service Partner Management
+@api_router.post("/service-partners", response_model=ServicePartner)
+async def create_service_partner(partner: ServicePartnerCreate, current_user: dict = Depends(get_admin_user)):
+    # First check if the product exists
+    website = await db.websites.find_one({"id": partner.product_id})
+    if not website:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    partner_dict = partner.dict()
+    partner_obj = ServicePartner(**partner_dict)
+    
+    result = await db.service_partners.insert_one(partner_obj.dict())
+    return partner_obj
+
+@api_router.get("/service-partners", response_model=List[ServicePartner])
+async def get_service_partners(current_user: dict = Depends(get_admin_user)):
+    partners = await db.service_partners.find().to_list(1000)
+    return [ServicePartner(**partner) for partner in partners]
+
+@api_router.get("/service-partners/{partner_id}", response_model=ServicePartner)
+async def get_service_partner(partner_id: str, current_user: dict = Depends(get_admin_user)):
+    partner = await db.service_partners.find_one({"id": partner_id})
+    if partner:
+        return ServicePartner(**partner)
+    raise HTTPException(status_code=404, detail="Service partner not found")
+
+@api_router.put("/service-partners/{partner_id}", response_model=ServicePartner)
+async def update_service_partner(partner_id: str, partner_update: ServicePartnerUpdate, current_user: dict = Depends(get_admin_user)):
+    partner = await db.service_partners.find_one({"id": partner_id})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Service partner not found")
+    
+    # If product_id is being updated, check if the new product exists
+    if partner_update.product_id:
+        website = await db.websites.find_one({"id": partner_update.product_id})
+        if not website:
+            raise HTTPException(status_code=404, detail="Product not found")
+    
+    partner_data = ServicePartner(**partner)
+    
+    # Update fields if provided
+    update_data = partner_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(partner_data, field, value)
+    
+    partner_data.updated_at = datetime.utcnow()
+    
+    await db.service_partners.update_one({"id": partner_id}, {"$set": partner_data.dict()})
+    return partner_data
+
+@api_router.delete("/service-partners/{partner_id}")
+async def delete_service_partner(partner_id: str, current_user: dict = Depends(get_admin_user)):
+    result = await db.service_partners.delete_one({"id": partner_id})
+    if result.deleted_count:
+        return {"status": "success", "message": "Service partner deleted"}
+    raise HTTPException(status_code=404, detail="Service partner not found")
+
+@api_router.get("/websites/{website_id}/service-partners", response_model=List[ServicePartner])
+async def get_service_partners_by_product(website_id: str):
+    partners = await db.service_partners.find({"product_id": website_id}).to_list(1000)
+    return [ServicePartner(**partner) for partner in partners]
+
 # Include the router in the main app
 app.include_router(api_router)
 
