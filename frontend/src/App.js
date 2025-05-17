@@ -49,20 +49,30 @@ const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post(`${API}/login`, { email, password });
+      console.log('Login response:', response.data);
       return { success: true, needsVerification: true };
     } catch (error) {
+      console.error('Login error:', error);
       throw new Error(error.response?.data?.detail || 'Login failed');
     }
   };
   
   const verify2FA = async (email, code) => {
     try {
+      console.log('Verifying 2FA:', { email, code });
       const response = await axios.post(`${API}/verify-2fa`, { email, code });
-      const { access_token } = response.data;
-      localStorage.setItem('token', access_token);
-      await checkAuthStatus(access_token);
-      return { success: true };
+      console.log('2FA response:', response.data);
+      
+      if (response.data && response.data.access_token) {
+        const { access_token } = response.data;
+        localStorage.setItem('token', access_token);
+        await checkAuthStatus(access_token);
+        return { success: true };
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
+      console.error('2FA verification error:', error);
       throw new Error(error.response?.data?.detail || 'Verification failed');
     }
   };
