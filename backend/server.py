@@ -347,6 +347,8 @@ async def set_api_key(config: ApiKeyConfig, current_user: dict = Depends(get_adm
 @api_router.post("/websites", response_model=WebsiteURL)
 async def create_website(website: WebsiteURLCreate, current_user: dict = Depends(get_admin_user)):
     website_dict = website.dict()
+    # Convert HttpUrl to string to avoid MongoDB serialization issues
+    website_dict["url"] = str(website_dict["url"])
     website_obj = WebsiteURL(**website_dict)
     
     # Scrape content immediately
