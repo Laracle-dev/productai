@@ -486,6 +486,66 @@ async def check_api_key_status(current_user: dict = Depends(get_admin_user)):
     api_key = os.environ.get("CLAUDE_API_KEY")
     return {"has_api_key": api_key is not None and api_key.strip() != ""}
 
+# Stripe configuration endpoints
+@api_router.post("/config/stripe")
+async def set_stripe_config(config: StripeConfig, current_user: dict = Depends(get_admin_user)):
+    try:
+        env_path = ROOT_DIR / '.env'
+        
+        # Read existing content
+        with open(env_path, 'r') as file:
+            content = file.read()
+        
+        # Update or add Stripe keys
+        lines = content.split('\n')
+        updated_lines = []
+        pub_key_added = False
+        secret_key_added = False
+        
+        for line in lines:
+            if line.startswith("STRIPE_PUBLISHABLE_KEY="):
+                updated_lines.append(f'STRIPE_PUBLISHABLE_KEY="{config.publishable_key}"')
+                pub_key_added = True
+            elif line.startswith("STRIPE_SECRET_KEY="):
+                updated_lines.append(f'STRIPE_SECRET_KEY="{config.secret_key}"')
+                secret_key_added = True
+            else:
+                updated_lines.append(line)
+        
+        if not pub_key_added:
+            updated_lines.append(f'STRIPE_PUBLISHABLE_KEY="{config.publishable_key}"')
+        if not secret_key_added:
+            updated_lines.append(f'STRIPE_SECRET_KEY="{config.secret_key}"')
+        
+        updated_content = '\n'.join(updated_lines)
+        
+        # Write back to file
+        with open(env_path, 'w') as file:
+            file.write(updated_content)
+        
+        # Update environment variables
+        os.environ["STRIPE_PUBLISHABLE_KEY"] = config.publishable_key
+        os.environ["STRIPE_SECRET_KEY"] = config.secret_key
+        
+        # Initialize Stripe with the secret key
+        stripe.api_key = config.secret_key
+        
+        return {"status": "success", "message": "Stripe configuration updated successfully"}
+    
+    except Exception as e:
+        logging.error(f"Error setting Stripe config: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error setting Stripe config: {str(e)}")
+
+@api_router.get("/config/stripe")
+async def get_stripe_config(current_user: dict = Depends(get_admin_user)):
+    publishable_key = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+    has_secret_key = bool(os.environ.get("STRIPE_SECRET_KEY", ""))
+    
+    return {
+        "has_keys": bool(publishable_key and has_secret_key),
+        "publishable_key": publishable_key
+    }
+
 # Website URL management - Now requires admin authentication
 @api_router.post("/websites", response_model=WebsiteURL)
 async def create_website(website: WebsiteURLCreate, current_user: dict = Depends(get_admin_user)):
