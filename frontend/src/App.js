@@ -567,7 +567,7 @@ const Orb = ({ isAnimating = true, hue = 240, width = "100%", height = "100%" })
         hue: { value: hue },
         hover: { value: 0 },
         rot: { value: 0 },
-        hoverIntensity: { value: 0.2 },
+        hoverIntensity: { value: 0.4 },
       },
     });
 
